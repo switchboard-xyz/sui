@@ -95,8 +95,9 @@ rev = "main" # testnet or mainnet
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
 rev = "3ada97c109cc7ae1b451cb384a1f2cfae49c8d3e" # testnet or mainnet
-Once dependencies are configured, updated aggregators can be referenced easily.
 ```
+
+Once dependencies are configured, updated aggregators can be referenced easily.
 
 ## Example Move Code for Using Switchboard Values
 
