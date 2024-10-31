@@ -4,17 +4,20 @@ Switchboard On-Demand Sui Integration
 
 # Switchboard On-Demand Integration Guide
 
-This guide covers the setup and use of Switchboard data feeds within your project, using the `Aggregator` module for updating feeds and integrating `Switchboard` in Move language.
+This guide covers the setup and use of Switchboard data feeds within your project, using the `Aggregator` module for updating feeds and integrating `Switchboard` in Move.
 
 ## Creating an Aggregator and Sending Transactions
 
-To create a feed aggregator, initialize it with specific parameters such as feed hash, name, authority, and settings for sample size, staleness, and variance.
+Building a feed in Switchboard can be done using the Typescript SDK, or it can be done with the [Switchboard Web App](https://ondemand.switchboard.xyz/sui/mainnet). Visit our [docs](https://docs.switchboard.xyz/docs) for more on designing and creating feeds.
 
-### Example: Creating and Sending a Transaction
+### Building Feeds
 
 ```typescript
-
-import { CrossbarClient, SwitchboardClient, Aggregator } from "@switchboard-xyz/sui-sdk";
+import {
+  CrossbarClient,
+  SwitchboardClient,
+  Aggregator,
+} from "@switchboard-xyz/sui-sdk";
 
 // for initial testing and development, you can use the public
 // https://crossbar.switchboard.xyz instance of crossbar
@@ -44,7 +47,6 @@ const maxVariance = 1e9;
 
 // Require only 1 job response
 const minJobResponses = 1;
-
 
 //==========================================================
 // Feed Initialization On-Chain
@@ -87,11 +89,13 @@ await client.waitForTransaction({
 
 // Log the transaction effects
 console.log(res);
-Updating Feeds
+```
+
+## Updating Feeds
+
 With Switchboard On-Demand, passing the PTB (proof-to-be) into the feed update method handles the update automatically.
 
-javascript
-Copy code
+```typescript
 const aggregator = new Aggregator(sb, aggregatorId);
 
 // Create the PTB transaction
