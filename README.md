@@ -23,6 +23,8 @@ import {
 // https://crossbar.switchboard.xyz instance of crossbar
 const crossbar = new CrossbarClient("https://crossbar.switchboard.xyz");
 
+// ... define some jobs ...
+
 // Store some job definition
 const { feedHash } = await crossbarClient.store(queue.pubkey.toBase58(), jobs);
 

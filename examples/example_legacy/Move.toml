@@ -1,0 +1,20 @@
+[package]
+name = "example"
+edition = "legacy"
+version = "0.0.1"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+override = true
+ 
+[dependencies.switchboard]
+git = "https://github.com/switchboard-xyz/sbv3.git"
+subdir = "chains/sui/on_demand"
+rev = "52aadd5e2dabb3b93408830ac492d1e772608358"
+
+[addresses]
+example = "0x0"
+std = "0x1"
+sui =  "0x2"
