@@ -1,6 +1,6 @@
 # sui
 
-Switchboard On-Demand Sui Integration
+**DISCLAIMER: SWITCHBOARD ON-DEMAND FOR SUI IS UNAUDITED. USE AT YOUR OWN RISK. rd On-Demand Sui Integration**
 
 # Switchboard On-Demand Integration Guide
 
@@ -120,7 +120,7 @@ await client.waitForTransaction({
 });
 
 // Log the transaction effects
-console.log(res);
+console.log({ aggregatorId, res });
 ```
 
 Note: Ensure the Switchboard Aggregator update is the first action in your PTB or occurs before referencing the feed update.
