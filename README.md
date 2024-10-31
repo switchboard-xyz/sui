@@ -13,7 +13,47 @@ To create a feed aggregator, initialize it with specific parameters such as feed
 ### Example: Creating and Sending a Transaction
 
 ```typescript
-{
+
+import { CrossbarClient, SwitchboardClient, Aggregator } from "@switchboard-xyz/sui-sdk";
+
+// for initial testing and development, you can use the public
+// https://crossbar.switchboard.xyz instance of crossbar
+const crossbar = new CrossbarClient("https://crossbar.switchboard.xyz");
+
+// Store some job definition
+const { feedHash } = await crossbarClient.store(queue.pubkey.toBase58(), jobs);
+
+// Create a SwitchboardClient using the SuiClient configured with your favorite RPC on testnet or mainnet
+const sb = new SwitchboardClient(suiClient);
+
+// try creating a feed
+const feedName = "BTC/USDT";
+
+// BTC/USDT example
+// const feedHash =
+// "0x013b9b2fb2bdd9e3610df0d7f3e31870a1517a683efb0be2f77a8382b4085833";
+
+// Require only one oracle response needed
+const minSampleSize = 1;
+
+// Allow update data to be up to 60 seconds old
+const maxStalenessSeconds = 60;
+
+// If jobs diverge more than 1%, don't allow the feed to produce a valid update
+const maxVariance = 1e9;
+
+// Require only 1 job response
+const minJobResponses = 1;
+
+
+//==========================================================
+// Feed Initialization On-Chain
+//==========================================================
+
+let transaction = new Transaction();
+
+// add the tx to the PTB
+await Aggregator.initTx(sb, transaction, {
   feedHash,
   name: feedName,
   authority: userAddress,
@@ -21,7 +61,7 @@ To create a feed aggregator, initialize it with specific parameters such as feed
   maxStalenessSeconds,
   maxVariance,
   minResponses: minJobResponses,
-}
+});
 
 // Send the transaction
 const res = await client.signAndExecuteTransaction({
