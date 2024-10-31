@@ -127,5 +127,6 @@ public entry fun use_switchboard_value(aggregator: &Aggregator) {
 
     // Use the computed result as needed...
 }
-This implementation allows you to read and utilize Switchboard data feeds within Move.
 ```
+
+This implementation allows you to read and utilize Switchboard data feeds within Move. If you have any questions or need further assistance, please contact the Switchboard team.
