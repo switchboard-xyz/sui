@@ -1,4 +1,3 @@
-// sui client upgrade --upgrade-capability 0x75c9afab64928bbb62039f0b4f4bb4437e5312557583c4f3d350affd705cb1ba
 import { SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
@@ -90,7 +89,7 @@ const feedName = "BTC/USDT";
 
 // BTC USDT
 const feedHash =
-  "0x013b9b2fb2bdd9e3610df0d7f3e31870a1517a683efb0be2f77a8382b4085833";
+  "0xf03694b72f771b19cbeb21c579773a18221a3091206ec775f5e84eb0aca40943";
 const minSampleSize = 1;
 const maxStalenessSeconds = 60;
 const maxVariance = 1e9;

@@ -3,8 +3,12 @@ module switchboard::queue_set_authority_action;
 use sui::event;
 use switchboard::queue::Queue;
 
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EInvalidAuthority: vector<u8> = b"Invalid authority";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
 
 public struct QueueAuthorityUpdated has copy, drop {
     queue_id: ID,
@@ -16,6 +20,7 @@ public fun validate(
     queue: &Queue,
     ctx: &mut TxContext
 ) {
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
     assert!(queue.has_authority(ctx), EInvalidAuthority);
 }
 

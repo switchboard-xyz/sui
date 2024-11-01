@@ -4,6 +4,9 @@ use std::type_name::{Self, TypeName};
 use std::string::String;
 use sui::coin::Coin;
 use sui::sui::SUI;
+use sui::table::{Self, Table};
+
+const VERSION: u8 = 1;
 
 public struct ExistingOracle has copy, drop, store {
     oracle_id: ID,
@@ -23,8 +26,9 @@ public struct Queue has key {
     guardian_queue_id: ID,
 
     // to ensure that oracles are only mapped once (oracle pubkeys)
-    existing_oracles: vector<ExistingOracle>,
+    existing_oracles: Table<vector<u8>, ExistingOracle>,
     fee_types: vector<TypeName>,
+    version: u8,
 }
 
 public fun id(queue: &Queue): ID {
@@ -67,23 +71,20 @@ public fun guardian_queue_id(queue: &Queue): ID {
     queue.guardian_queue_id
 }
 
-public fun existing_oracles(queue: &Queue): vector<ExistingOracle> {
-    queue.existing_oracles
+public fun existing_oracles(queue: &Queue): &Table<vector<u8>, ExistingOracle> {
+    &queue.existing_oracles
 }
 
 public fun fee_types(queue: &Queue): vector<TypeName> {
     queue.fee_types
 }
 
-public fun existing_oracles_contains(queue: &Queue, oracle_key: &vector<u8>): bool {
-    let mut i = 0;
-    while (i < vector::length(&queue.existing_oracles)) {
-        if (queue.existing_oracles[i].oracle_key == *oracle_key) {
-            return true
-        };
-        i = i + 1;
-    };
-    false
+public fun version(queue: &Queue): u8 {
+    queue.version
+}
+
+public fun existing_oracles_contains(queue: &Queue, oracle_key: vector<u8>): bool {
+    queue.existing_oracles.contains(oracle_key)
 }
 
 public fun has_authority(queue: &Queue, ctx: &TxContext): bool {
@@ -129,8 +130,9 @@ public(package) fun new(
             oracle_validity_length_ms,
             last_queue_override_ms: 0,
             guardian_queue_id,
-            existing_oracles: vector::empty(),
+            existing_oracles: table::new(ctx),
             fee_types: vector::singleton(type_name::get<Coin<SUI>>()),
+            version: VERSION,
         };
         transfer::share_object(guardian_queue);
     } else {
@@ -145,8 +147,9 @@ public(package) fun new(
             oracle_validity_length_ms,
             last_queue_override_ms: 0,
             guardian_queue_id,
-            existing_oracles: vector::empty(),
+            existing_oracles: table::new(ctx),
             fee_types: vector::singleton(type_name::get<Coin<SUI>>()),
+            version: VERSION,
         };
         transfer::share_object(oracle_queue);
     };
@@ -155,7 +158,7 @@ public(package) fun new(
 }
 
 public(package) fun add_existing_oracle(queue: &mut Queue, oracle_key: vector<u8>, oracle_id: ID) {
-    queue.existing_oracles.push_back(ExistingOracle { oracle_id, oracle_key });
+    queue.existing_oracles.add(oracle_key, ExistingOracle { oracle_id, oracle_key });
 }
 
 public(package) fun set_last_queue_override_ms(queue: &mut Queue, last_queue_override_ms: u64) {
@@ -218,11 +221,12 @@ fun destroy_queue(queue: Queue) {
         oracle_validity_length_ms: _,
         last_queue_override_ms: _,
         guardian_queue_id: _,
-        existing_oracles: _,
+        existing_oracles,
         fee_types: _,
+        version: _,
     } = queue;
+    existing_oracles.drop();
     object::delete(id);
-
 }
 
 #[test]
@@ -253,8 +257,9 @@ fun test_init_queue() {
         oracle_validity_length_ms,
         last_queue_override_ms: 0,
         guardian_queue_id,
-        existing_oracles: vector::empty(),
+        existing_oracles: table::new(ctx),
         fee_types: vector::empty(),
+        version: VERSION,
     };
 
     assert!(id(&queue) == queue.id.to_inner());
@@ -299,8 +304,9 @@ fun test_queue_set_configs() {
         oracle_validity_length_ms,
         last_queue_override_ms: 0,
         guardian_queue_id,
-        existing_oracles: vector::empty(),
+        existing_oracles: table::new(ctx),
         fee_types: vector::empty(),
+        version: VERSION,
     };
 
     let new_name = string::utf8(b"Mainnet Oracle Queue");

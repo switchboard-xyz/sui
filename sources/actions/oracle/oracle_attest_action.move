@@ -7,6 +7,9 @@ use switchboard::hash;
 use switchboard::queue::Queue;
 use switchboard::oracle::{Self, Oracle};
 
+const EXPECTED_ORACLE_VERSION: u8 = 1;
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EInvalidGuardianQueue: vector<u8> = b"Invalid guardian queue";
 #[error]
@@ -17,6 +20,10 @@ const EWrongSignatureLength: vector<u8> = b"Signature is the wrong length";
 const ETimestampInvalid: vector<u8> = b"Timestamp is invalid";
 #[error]
 const EInvalidSignature: vector<u8> = b"Invalid signature";
+#[error]
+const EInvalidOracleVersion: vector<u8> = b"Invalid oracle version";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
 
 public struct AttestationCreated has copy, drop {
     oracle_id: ID,
@@ -43,6 +50,15 @@ public fun validate(
     signature: vector<u8>,
     clock: &Clock,
 ) {
+
+    // check the queue version
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
+
+    // check the oracle version
+    assert!(oracle.version() == EXPECTED_ORACLE_VERSION, EInvalidOracleVersion);
+    
+    // check the guardian version
+    assert!(guardian.version() == EXPECTED_ORACLE_VERSION, EInvalidOracleVersion);
 
     // check that guardian queue (for the target queue) is the guardian's queue
     assert!(guardian.queue() == queue.guardian_queue_id(), EInvalidGuardianQueue);

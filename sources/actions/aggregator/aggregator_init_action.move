@@ -6,6 +6,8 @@ use sui::event;
 use switchboard::aggregator;
 use switchboard::queue::Queue;
 
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EInvalidMinSampleSize: vector<u8> = b"Invalid min_sample_size";
 #[error]
@@ -16,6 +18,8 @@ const EInvalidFeedHash: vector<u8> = b"Invalid feed_hash";
 const EInvalidMinResponses: vector<u8> = b"Invalid min_responses";
 #[error]
 const EInvalidMaxStalenessSeconds: vector<u8> = b"Invalid max_staleness_seconds";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
 
 public struct AggregatorCreated has copy, drop {
     aggregator_id: ID,
@@ -23,13 +27,14 @@ public struct AggregatorCreated has copy, drop {
 }
 
 public fun validate(
+    queue: &Queue,
     feed_hash: vector<u8>,
     min_sample_size: u64,
     max_staleness_seconds: u64,
     max_variance: u64,
     min_responses: u32,
 ) {
-
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
     assert!(min_sample_size > 0, EInvalidMinSampleSize);
     assert!(max_variance > 0, EInvalidMaxVariance);
     assert!(feed_hash.length() == 32, EInvalidFeedHash);
@@ -86,6 +91,7 @@ public entry fun run(
     ctx: &mut TxContext
 ) {   
     validate(
+        queue,
         feed_hash,
         min_sample_size,
         max_staleness_seconds,

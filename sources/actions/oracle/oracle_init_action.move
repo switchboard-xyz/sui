@@ -4,8 +4,12 @@ use sui::event;
 use switchboard::queue::Queue;
 use switchboard::oracle;
 
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EOracleKeyExists: vector<u8> = b"Oracle already exists on Queue";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
 
 public struct OracleCreated has copy, drop {
     oracle_id: ID,
@@ -17,7 +21,8 @@ public fun validate(
     oracle_key: &vector<u8>,
     queue: &Queue,
 ) {
-    assert!(!queue.existing_oracles_contains(oracle_key), EOracleKeyExists);
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
+    assert!(!queue.existing_oracles_contains(*oracle_key), EOracleKeyExists);
 }
 
 fun actuate(

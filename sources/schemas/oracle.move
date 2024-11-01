@@ -2,6 +2,7 @@
 module switchboard::oracle;
 
 const ATTESTATION_TIMEOUT_MS: u64 = 1000 * 60 * 10; // 10 minutes
+const VERSION: u8 = 1;
 
 public struct Attestation has copy, store, drop {
     guardian_id: ID, 
@@ -18,6 +19,7 @@ public struct Oracle has key {
     mr_enclave: vector<u8>,
     secp256k1_key: vector<u8>,
     valid_attestations: vector<Attestation>,
+    version: u8,
 }
 
 public fun id(oracle: &Oracle): ID {
@@ -56,6 +58,10 @@ public fun timestamp_ms(attestation: &Attestation): u64 {
     attestation.timestamp_ms
 }
 
+public fun version(oracle: &Oracle): u8 {
+    oracle.version
+}
+
 public(package) fun new(
     oracle_key: vector<u8>,
     queue: ID,
@@ -73,6 +79,7 @@ public(package) fun new(
         secp256k1_key: vector::empty(),
         valid_attestations: vector::empty(),
         mr_enclave: vector::empty(),
+        version: VERSION,
     };
     transfer::share_object(oracle);
     oracle_id
@@ -126,6 +133,7 @@ fun destroy_oracle(oracle: Oracle) {
         secp256k1_key: _,
         valid_attestations: _,
         mr_enclave: _,
+        version: _,
     } = oracle;
     object::delete(id);
  
@@ -153,6 +161,7 @@ fun test_create_oracle() {
         secp256k1_key: vector::empty(),
         valid_attestations: vector::empty(),
         mr_enclave: vector::empty(),
+        version: VERSION,
     };
 
     // test accessors
@@ -186,6 +195,7 @@ public fun test_attestations() {
         secp256k1_key: vector::empty(),
         valid_attestations: vector::empty(),
         mr_enclave: vector::empty(),
+        version: VERSION,
     };
 
     let guardian_id = object::id_from_address(@0x28);
