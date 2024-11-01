@@ -3,8 +3,12 @@ module switchboard::aggregator_set_authority_action;
 use sui::event;
 use switchboard::aggregator::Aggregator;
 
+const EXPECTED_AGGREGATOR_VERSION: u8 = 1;
+
 #[error]
 const EInvalidAuthority: vector<u8> = b"Invalid authority";
+#[error]
+const EInvalidAggregatorVersion: vector<u8> = b"Invalid aggregator version";
 
 public struct AggregatorAuthorityUpdated has copy, drop {
     aggregator_id: ID,
@@ -13,6 +17,7 @@ public struct AggregatorAuthorityUpdated has copy, drop {
 }
 
 public fun validate(aggregator: &Aggregator, ctx: &mut TxContext) {
+    assert!(aggregator.version() == EXPECTED_AGGREGATOR_VERSION, EInvalidAggregatorVersion);
     assert!(aggregator.has_authority(ctx), EInvalidAuthority);
 }
 

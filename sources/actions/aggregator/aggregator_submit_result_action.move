@@ -10,6 +10,9 @@ use switchboard::oracle::Oracle;
 use switchboard::queue::Queue;
 use sui::event;
 
+const EXPECTED_AGGREGATOR_VERSION: u8 = 1;
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EOracleInvalid: vector<u8> = b"Oracle is invalid";
 #[error]
@@ -24,6 +27,10 @@ const ERecoveredPubkeyInvalid: vector<u8> = b"Recovered pubkey is invalid";
 const EInvalidFeeType: vector<u8> = b"Invalid fee type";
 #[error]
 const EInsufficientFee: vector<u8> = b"Insufficient fee";
+#[error]
+const EInvalidAggregatorVersion: vector<u8> = b"Invalid aggregator version";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
 
 public struct AggregatorUpdated has copy, drop {
     aggregator_id: ID,
@@ -43,16 +50,22 @@ public fun validate<T>(
     coin: &Coin<T>,
 ) {
 
-    // // verify that the oracle is servicing the correct queue
+    // check that the versions are correct
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
+
+    // check that the aggregator version is correct
+    assert!(aggregator.version() == EXPECTED_AGGREGATOR_VERSION, EInvalidAggregatorVersion);
+
+    // verify that the oracle is servicing the correct queue
     assert!(oracle.queue() == aggregator.queue(), EAggregatorQueueMismatch);
 
-    // // verify that the oracle is up
+    // verify that the oracle is up
     assert!(oracle.expiration_time_ms() > clock.timestamp_ms(), EOracleInvalid);
 
-    // // make sure that update staleness point is not in the future
+    // make sure that update staleness point is not in the future
     assert!(timestamp_seconds * 1000 + aggregator.max_staleness_seconds() * 1000 >= clock.timestamp_ms(), ETimestampInvalid);
 
-    // // check that the signature is valid length
+    // check that the signature is valid length
     assert!(signature.length() == 65, ESignatureInvalid);
 
     // check that the signature is valid

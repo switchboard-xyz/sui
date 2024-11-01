@@ -1,17 +1,16 @@
-module switchboard::queue_init_action;
+module switchboard::guardian_queue_init_action;
 
 use sui::event;
 use std::string::String;
-use switchboard::queue::{Self, Queue};
+use switchboard::queue;
 
 #[error]
 const EInvalidOracleValidityLength: vector<u8> = b"Invalid oracle validity length";
 #[error]
 const EInvalidMinAttestations: vector<u8> = b"Invalid min attestations";
 
-public struct QueueCreated has copy, drop {
+public struct GuardianQueueCreated has copy, drop {
     queue_id: ID,
-    guardian_queue_id: ID,
     queue_key: vector<u8>,
 }
 
@@ -31,7 +30,6 @@ fun actuate(
     fee_recipient: address,
     min_attestations: u64,
     oracle_validity_length_ms: u64,
-    guardian_queue_id: ID,
     ctx: &mut TxContext
 ) {
     let queue_id = queue::new(
@@ -42,15 +40,16 @@ fun actuate(
         fee_recipient,
         min_attestations,
         oracle_validity_length_ms,
-        guardian_queue_id,
-        false,
+
+        // guardian queue id is 0
+        object::id_from_address(@0x0000000000000000000000000000000000000000000000000000000000000000),
+        true,
         ctx,
     );
 
     // emit the creation event
-    let created_event = QueueCreated {
+    let created_event = GuardianQueueCreated {
         queue_id,
-        guardian_queue_id: guardian_queue_id,
         queue_key: queue_key,
     };
     event::emit(created_event);
@@ -66,7 +65,6 @@ public entry fun run(
     fee_recipient: address,
     min_attestations: u64,
     oracle_validity_length_ms: u64,
-    guardian_queue: &Queue,
     ctx: &mut TxContext
 ) {   
     validate(
@@ -81,7 +79,6 @@ public entry fun run(
         fee_recipient,
         min_attestations,
         oracle_validity_length_ms,
-        guardian_queue.id(),
         ctx,
     );
 }

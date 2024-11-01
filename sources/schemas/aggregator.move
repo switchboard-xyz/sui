@@ -7,9 +7,11 @@ use sui::clock::Clock;
 use switchboard::decimal::{Self, Decimal};
 
 const MAX_RESULTS: u64 = 16;
+const VERSION: u8 = 1;
 
 public struct CurrentResult has drop, store {
     result: Decimal,
+    timestamp_ms: u64,
     min_timestamp_ms: u64,
     max_timestamp_ms: u64,
     min_result: Decimal,
@@ -24,7 +26,6 @@ public struct Update has copy, drop, store {
     timestamp_ms: u64,
     oracle: ID,
 }
-
 
 public struct UpdateState has store {
     results: vector<Update>,
@@ -71,6 +72,9 @@ public struct Aggregator has key {
 
     // The state of the updates
     update_state: UpdateState,
+
+    // version
+    version: u8,
 }
 
 // -- Utility Functions --
@@ -124,6 +128,10 @@ public fun current_result(aggregator: &Aggregator): &CurrentResult {
     &aggregator.current_result
 }
 
+public fun version(aggregator: &Aggregator): u8 {
+    aggregator.version
+}
+
 // -- CurrentResult Accessors --
 
 public fun result(current_result: &CurrentResult): &Decimal {
@@ -156,6 +164,10 @@ public fun range(current_result: &CurrentResult): &Decimal {
 
 public fun mean(current_result: &CurrentResult): &Decimal {
     &current_result.mean
+}
+
+public fun timestamp_ms(current_result: &CurrentResult): u64 {
+    current_result.timestamp_ms
 }
 
 // -- Mutators --
@@ -195,11 +207,13 @@ public(package) fun new(
             stdev: decimal::zero(),
             range: decimal::zero(),
             mean: decimal::zero(),
+            timestamp_ms: 0,
         },
         update_state: UpdateState {
             results: vector::empty(),
             curr_idx: 0,
         },
+        version: VERSION,
     };
     transfer::share_object(aggregator);
     aggregator_id
@@ -309,7 +323,7 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
 
     // if there's only 1 index, return the result
     if (update_indices.length() == 1) {
-        let result = update_state.median_result(&mut update_indices);
+        let (result, timestamp_ms) = update_state.median_result(&mut update_indices);
         return option::some(CurrentResult {
             min_timestamp_ms: updates[update_indices[0]].timestamp_ms,
             max_timestamp_ms: updates[update_indices[0]].timestamp_ms,
@@ -319,6 +333,7 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
             result,
             stdev: decimal::zero(),
             mean: result,
+            timestamp_ms,
         })
     };
 
@@ -355,7 +370,7 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
     let variance = m2 / (count - 1);
     let stdev = variance.sqrt();
     let range = max_result.sub(&min_result);
-    let result = update_state.median_result(&mut update_indices);
+    let (result, timestamp_ms) = update_state.median_result(&mut update_indices);
     
     // update the current result
     option::some(CurrentResult {
@@ -367,6 +382,7 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
         result,
         stdev: decimal::new(stdev, false),
         mean: decimal::new(mean, false),
+        timestamp_ms,
     })
 }    
 
@@ -397,7 +413,7 @@ fun sub_i128(a: u128, a_neg: bool, b: u128, b_neg: bool): (u128, bool) {
 
 // select median or lower bound middle item if even (with quickselect)
 // sort the update indices in place
-fun median_result(update_state: &UpdateState, update_indices: &mut vector<u64>): Decimal {
+fun median_result(update_state: &UpdateState, update_indices: &mut vector<u64>): (Decimal, u64) {
     let updates = &update_state.results;
     let n = update_indices.length();
     let mid = n / 2;
@@ -429,7 +445,7 @@ fun median_result(update_state: &UpdateState, update_indices: &mut vector<u64>):
     };
 
     // return the median result
-    updates[update_indices[mid]].result
+    (updates[update_indices[mid]].result, updates[update_indices[mid]].timestamp_ms)
 }
 
 // Get the indices of valid updates
@@ -513,11 +529,13 @@ public fun new_aggregator(
             stdev: decimal::zero(),
             range: decimal::zero(),
             mean: decimal::zero(),
+            timestamp_ms: 0,
         },
         update_state: UpdateState {
             results: vector::empty(),
             curr_idx: 0,
         },
+        version: VERSION,
     }
 }
 
@@ -603,6 +621,7 @@ fun destroy_aggregator(aggregator: Aggregator) {
         created_at_ms: _,
         current_result: _,
         update_state,
+        version: _,
     } = aggregator;
 
     let UpdateState {

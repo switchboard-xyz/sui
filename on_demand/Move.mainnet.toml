@@ -2,7 +2,12 @@
 name = "Switchboard"
 edition = "2024.beta"
 version = "0.0.1"
-published-at = "0x957633c1fd294857390f99dda23524eee7d8bb1671acd7e0c05aaeba38dc98f4"
+published-at = "0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8"
+
+# First Publish: 0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8
+# AdminCap: 0xe10be54c1686c5d5e6ccd74b7589a7362e7d075d6e4c513c8af379fdaf4c5f36
+# State: 0x90a2829005435005300abaf7ce8115814b38c8d42a6de5aaf311774c60603b68
+# UpgradeCap: 0xda0d1de2ce8afde226f66b1963c3f6afc929ab49eaeed951c723a481499e31e9
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }

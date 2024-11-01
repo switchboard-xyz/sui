@@ -5,6 +5,9 @@ use sui::event;
 use switchboard::oracle::Oracle;
 use switchboard::queue::Queue;
 
+const EXPECTED_ORACLE_VERSION: u8 = 1;
+const EXPECTED_QUEUE_VERSION: u8 = 1;
+
 #[error]
 const EInvalidAuthority: vector<u8> = b"Invalid authority";
 #[error]
@@ -13,6 +16,10 @@ const EInvalidExpirationTime: vector<u8> = b"Invalid expiration time";
 const EInvalidQueueId: vector<u8> = b"Invalid queue id";
 #[error]
 const EInvalidQueueKey: vector<u8> = b"Invalid queue key";
+#[error]
+const EInvalidQueueVersion: vector<u8> = b"Invalid queue version";
+#[error]
+const EInvalidOracleVersion: vector<u8> = b"Invalid oracle version";
 
 public struct QueueOracleOverride has copy, drop {
     queue_id: ID,
@@ -28,6 +35,8 @@ public fun validate(
     expiration_time_ms: u64,
     ctx: &mut TxContext
 ) {
+    assert!(queue.version() == EXPECTED_QUEUE_VERSION, EInvalidQueueVersion);
+    assert!(oracle.version() == EXPECTED_ORACLE_VERSION, EInvalidOracleVersion);
     assert!(queue.queue_key() == oracle.queue_key(), EInvalidQueueKey);
     assert!(queue.id() == oracle.queue(), EInvalidQueueId);
     assert!(queue.has_authority(ctx), EInvalidAuthority);
