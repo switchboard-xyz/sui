@@ -2,7 +2,7 @@
 name = "Switchboard"
 edition = "2024.beta"
 version = "0.0.1"
-published-at = "0x509b09fb8d4c6bdddbf398fdd4a505386d0bf94560c1a52700820cc78a7e5b86"
+published-at = "0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "3ada97c109cc7ae1b451cb384a1f2cfae49c8d3e" }
