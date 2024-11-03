@@ -9,7 +9,7 @@ subdir = "crates/sui-framework/packages/sui-framework"
 rev = "framework/mainnet"
 override = true
  
-[dependencies.switchboard]
+[dependencies.Switchboard]
 git = "https://github.com/switchboard-xyz/sui.git"
 subdir = "on_demand"
 rev = "mainnet"
