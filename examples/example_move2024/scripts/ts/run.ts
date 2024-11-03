@@ -51,10 +51,10 @@ const userAddress = keypair.getPublicKey().toSuiAddress();
 console.log(`User account ${userAddress} loaded.`);
 
 const exampleAddress =
-  "0xaff454f567e502d4a0504298e55d1e5215bd15bc1614569e06e3f17884bfe05c";
+  "0xa404295c27e817d074d623d547c9d8f8711eb06ba1300676d7d9f58662fd0dda";
 
 const aggregatorAddress =
-  "0xa12b4dfc7e22f14e6e169171fba765d12e604d7ecbb118b8bc799d387b665bfb";
+  "0xa3b4d2398c2d781bba70f189e3d0770cbcb981d9c719e84318f455057d9207dd";
 
 const tx = new Transaction();
 

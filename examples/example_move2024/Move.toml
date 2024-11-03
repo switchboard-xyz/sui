@@ -3,9 +3,15 @@ name = "example"
 edition = "2024.beta"
 version = "0.0.1"
 
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
-switchboard = { git = "https://github.com/switchboard-xyz/sui.git", subdir = "chains/sui/on_demand", rev = "mainnet" }
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+ 
+[dependencies.Switchboard]
+git = "https://github.com/switchboard-xyz/sui.git"
+subdir = "on_demand"
+rev = "mainnet"
 
 [addresses]
 example = "0x0"
