@@ -2,11 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "B3C63C9BAB588BC3897385DDB36968A6EC3EB981935E4311747C6215987D3852"
+manifest_digest = "D0F7528616FF462E4899DD02034947D1C8CD757F1707EBDEC025F0A18E988CB1"
 deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { id = "Sui", name = "Sui" },
-  { id = "switchboard", name = "switchboard" },
+  { id = "Switchboard", name = "Switchboard" },
 ]
 
 [[move.package]]
@@ -22,8 +22,8 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "switchboard"
-source = { git = "https://github.com/switchboard-xyz/sbv3.git", rev = "52aadd5e2dabb3b93408830ac492d1e772608358", subdir = "chains/sui/on_demand" }
+id = "Switchboard"
+source = { git = "https://github.com/switchboard-xyz/sui.git", rev = "mainnet", subdir = "on_demand" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
