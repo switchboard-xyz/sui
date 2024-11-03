@@ -10,8 +10,8 @@ rev = "framework/mainnet"
 override = true
  
 [dependencies.switchboard]
-git = "https://github.com/switchboard-xyz/sbv3.git"
-subdir = "chains/sui/on_demand"
+git = "https://github.com/switchboard-xyz/sui.git"
+subdir = "on_demand"
 rev = "mainnet"
 
 [addresses]
