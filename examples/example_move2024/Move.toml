@@ -4,8 +4,8 @@ edition = "2024.beta"
 version = "0.0.1"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "86fa6e86b62a6984b741bab9c6440adff9aec669" }
-switchboard = { git = "https://github.com/switchboard-xyz/sbv3.git", subdir = "chains/sui/on_demand", rev = "52aadd5e2dabb3b93408830ac492d1e772608358" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+switchboard = { git = "https://github.com/switchboard-xyz/sui.git", subdir = "chains/sui/on_demand", rev = "mainnet" }
 
 [addresses]
 example = "0x0"

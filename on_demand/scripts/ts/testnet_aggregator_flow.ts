@@ -143,7 +143,7 @@ console.log("Sui Queue Data: ", suiQueueData);
 
 const response = await aggregator.fetchUpdateTx(feedTx);
 
-console.log("Fetch Update Response: ", response);
+console.log(response);
 
 // send the transaction
 const feedResponse = await client.signAndExecuteTransaction({
