@@ -12,7 +12,7 @@ override = true
 [dependencies.switchboard]
 git = "https://github.com/switchboard-xyz/sbv3.git"
 subdir = "chains/sui/on_demand"
-rev = "52aadd5e2dabb3b93408830ac492d1e772608358"
+rev = "mainnet"
 
 [addresses]
 example = "0x0"
