@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const MAINNET_SUI_RPC = "https://fullnode.mainnet.sui.io:443";
+const MAINNET_SUI_RPC = "https://fullnode.testnet.sui.io:443";
 const client = new SuiClient({
   url: MAINNET_SUI_RPC,
 });
@@ -49,7 +49,7 @@ const userAddress = keypair.getPublicKey().toSuiAddress();
 console.log(`User account ${userAddress} loaded.`);
 
 const exampleAddress =
-  "0x3b848d34b60087ecbbb70631126b08b9a13a212537eac0386826cbe4fc70fa46";
+  "0x4ec2a6770486b040acb907adf3a92abf23276760b2a70d8cc10257e41034de87";
 
 const aggregatorAddress =
   "0xc0c5a26a1186787e39c92a974caf07c5eaccf186c9a6d0c00c0722a9674448a4";
