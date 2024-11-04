@@ -1,4 +1,3 @@
-// sui client upgrade --upgrade-capability 0x75c9afab64928bbb62039f0b4f4bb4437e5312557583c4f3d350affd705cb1ba
 import { SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Transaction } from "@mysten/sui/transactions";
@@ -7,7 +6,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const MAINNET_SUI_RPC = "https://fullnode.mainnet.sui.io:443";
+const MAINNET_SUI_RPC = "https://fullnode.testnet.sui.io:443";
 const client = new SuiClient({
   url: MAINNET_SUI_RPC,
 });
@@ -51,10 +50,10 @@ const userAddress = keypair.getPublicKey().toSuiAddress();
 console.log(`User account ${userAddress} loaded.`);
 
 const exampleAddress =
-  "0xa404295c27e817d074d623d547c9d8f8711eb06ba1300676d7d9f58662fd0dda";
+  "0x2f4b7485d25aedbca3e630c6da5d72a97fd4290bfbf9ac23e5739efc1cbad545";
 
 const aggregatorAddress =
-  "0xa3b4d2398c2d781bba70f189e3d0770cbcb981d9c719e84318f455057d9207dd";
+  "0xc0c5a26a1186787e39c92a974caf07c5eaccf186c9a6d0c00c0722a9674448a4";
 
 const tx = new Transaction();
 

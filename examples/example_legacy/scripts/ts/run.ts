@@ -52,7 +52,7 @@ const exampleAddress =
   "0x3b848d34b60087ecbbb70631126b08b9a13a212537eac0386826cbe4fc70fa46";
 
 const aggregatorAddress =
-  "0xa3b4d2398c2d781bba70f189e3d0770cbcb981d9c719e84318f455057d9207dd";
+  "0xc0c5a26a1186787e39c92a974caf07c5eaccf186c9a6d0c00c0722a9674448a4";
 
 const tx = new Transaction();
 

@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "FDD3A4BFFC780F79A298CC1BD170004575F99C3C47F8E3F9C3B363CF78956B78"
+manifest_digest = "85EA7086AAE46D55D31C8CCE56E4C1818582F478F097EBDD5856188DE4344F09"
 deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -11,11 +11,11 @@ dependencies = [
 
 [[move.package]]
 id = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainnet", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/testnet", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 id = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainnet", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/testnet", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -23,7 +23,7 @@ dependencies = [
 
 [[move.package]]
 id = "Switchboard"
-source = { git = "https://github.com/switchboard-xyz/sui.git", rev = "mainnet", subdir = "on_demand" }
+source = { git = "https://github.com/switchboard-xyz/sui.git", rev = "testnet", subdir = "on_demand" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -40,4 +40,10 @@ flavor = "sui"
 chain-id = "35834a8a"
 original-published-id = "0xa404295c27e817d074d623d547c9d8f8711eb06ba1300676d7d9f58662fd0dda"
 latest-published-id = "0xa404295c27e817d074d623d547c9d8f8711eb06ba1300676d7d9f58662fd0dda"
+published-version = "1"
+
+[env.testnet2]
+chain-id = "4c78adac"
+original-published-id = "0x2f4b7485d25aedbca3e630c6da5d72a97fd4290bfbf9ac23e5739efc1cbad545"
+latest-published-id = "0x2f4b7485d25aedbca3e630c6da5d72a97fd4290bfbf9ac23e5739efc1cbad545"
 published-version = "1"
