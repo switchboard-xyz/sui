@@ -6,13 +6,13 @@ version = "0.0.1"
 [dependencies.Sui]
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
-rev = "framework/mainnet"
+rev = "framework/testnet"
 override = true
  
-[dependencies.switchboard]
-git = "https://github.com/switchboard-xyz/sbv3.git"
-subdir = "chains/sui/on_demand"
-rev = "52aadd5e2dabb3b93408830ac492d1e772608358"
+[dependencies.Switchboard]
+git = "https://github.com/switchboard-xyz/sui.git"
+subdir = "on_demand"
+rev = "testnet"
 
 [addresses]
 example = "0x0"

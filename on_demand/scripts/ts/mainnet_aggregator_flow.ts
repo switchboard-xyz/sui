@@ -63,7 +63,6 @@ const userAddress = keypair.getPublicKey().toSuiAddress();
 
 console.log(`User account ${userAddress} loaded.`);
 
-console.log("Initializing MAINNET Guardian Queue Setup");
 const chainID = await client.getChainIdentifier();
 
 console.log(`Chain ID: ${chainID}`);
@@ -71,16 +70,8 @@ console.log(`Chain ID: ${chainID}`);
 const state = new State(sb, ON_DEMAND_MAINNET_STATE_OBJECT_ID);
 const stateData = await state.loadData();
 
-console.log("State Data: ", stateData);
-
-const queue = new Queue(sb, stateData.guardianQueue);
-console.log("Queue Data: ", await queue.loadData());
-
-const allOracles = await queue.loadOracleData();
-console.log("All Oracles: ", allOracles);
-
 //================================================================================================
-// Initialize Feed Flow
+// Initialize Feed
 //================================================================================================
 
 // try creating a feed
@@ -94,6 +85,7 @@ const maxStalenessSeconds = 60;
 const maxVariance = 1e9;
 const minResponses = 1;
 let transaction = new Transaction();
+
 await Aggregator.initTx(sb, transaction, {
   feedHash,
   name: feedName,
@@ -132,13 +124,11 @@ const aggregator = new Aggregator(sb, aggregatorId);
 
 console.log("Aggregator Data: ", await aggregator.loadData());
 
+//================================================================================================
+// Update Feed
+//================================================================================================
+
 let feedTx = new Transaction();
-
-const suiQueue = new Queue(sb, stateData.oracleQueue);
-const suiQueueData = await suiQueue.loadData();
-
-console.log("Sui Queue Data: ", suiQueueData);
-
 const response = await aggregator.fetchUpdateTx(feedTx);
 
 console.log("Fetch Update Response: ", response);

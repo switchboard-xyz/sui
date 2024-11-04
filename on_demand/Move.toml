@@ -5,8 +5,8 @@ version = "0.0.1"
 published-at = "0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "3ada97c109cc7ae1b451cb384a1f2cfae49c8d3e" }
-
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+ 
 [addresses]
 switchboard = "0x0"
 std = "0x1"

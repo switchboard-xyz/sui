@@ -6,6 +6,35 @@
 
 This guide covers the setup and use of Switchboard data feeds within your project, using the `Aggregator` module for updating feeds and integrating `Switchboard` in Move.
 
+## Active Deployments
+
+The Switchboard On-Demand service is currently deployed on the following networks:
+
+- Mainnet: [0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8](https://suiscan.xyz/mainnet/object/0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8)
+- Testnet: [0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989](https://suiscan.xyz/testnet/object/0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989)
+
+## Typescript-SDK Installation
+
+To use Switchboard On-Demand, add the following dependencies to your project:
+
+### NPM
+
+```bash
+npm install @switchboard-xyz/sui-sdk --save
+```
+
+### Bun
+
+```bash
+bun add @switchboard-xyz/sui-sdk
+```
+
+### PNPM
+
+```bash
+pnpm add @switchboard-xyz/sui-sdk
+```
+
 ## Creating an Aggregator and Sending Transactions
 
 Building a feed in Switchboard can be done using the Typescript SDK, or it can be done with the [Switchboard Web App](https://ondemand.switchboard.xyz/sui/mainnet). Visit our [docs](https://docs.switchboard.xyz/docs) for more on designing and creating feeds.
@@ -17,6 +46,8 @@ import {
   CrossbarClient,
   SwitchboardClient,
   Aggregator,
+  ON_DEMAND_MAINNET_QUEUE,
+  ON_DEMAND_TESTNET_QUEUE,
 } from "@switchboard-xyz/sui-sdk";
 
 // for initial testing and development, you can use the public
@@ -24,6 +55,8 @@ import {
 const crossbar = new CrossbarClient("https://crossbar.switchboard.xyz");
 
 // ... define some jobs ...
+
+const queue = isMainnetSui ? ON_DEMAND_MAINNET_QUEUE : ON_DEMAND_TESTNET_QUEUE;
 
 // Store some job definition
 const { feedHash } = await crossbarClient.store(queue.pubkey.toBase58(), jobs);
@@ -33,10 +66,6 @@ const sb = new SwitchboardClient(suiClient);
 
 // try creating a feed
 const feedName = "BTC/USDT";
-
-// BTC/USDT example
-// const feedHash =
-// "0x013b9b2fb2bdd9e3610df0d7f3e31870a1517a683efb0be2f77a8382b4085833";
 
 // Require only one oracle response needed
 const minSampleSize = 1;
@@ -132,15 +161,16 @@ Note: Ensure the Switchboard Aggregator update is the first action in your PTB o
 To integrate Switchboard with Move, add the following dependencies to Move.toml:
 
 ```toml
-[dependencies.switchboard]
+[dependencies.Switchboard]
 git = "https://github.com/switchboard-xyz/sui.git"
 subdir = "on_demand/"
-rev = "main" # testnet or mainnet
+rev = "mainnet" # testnet or mainnet
 
 [dependencies.Sui]
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
-rev = "3ada97c109cc7ae1b451cb384a1f2cfae49c8d3e" # testnet or mainnet
+rev = "framework/mainnet" # testnet or mainnet
+# override = true # Uncomment if you need to override the Sui dependency
 ```
 
 Once dependencies are configured, updated aggregators can be referenced easily.
