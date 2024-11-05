@@ -10,6 +10,7 @@ import {
   Aggregator,
   ON_DEMAND_MAINNET_STATE_OBJECT_ID,
   SwitchboardClient,
+  ON_DEMAND_MAINNET_OBJECT_PACKAGE_ID,
 } from "@switchboard-xyz/sui-sdk";
 import * as fs from "fs";
 import * as path from "path";
@@ -21,6 +22,7 @@ import {
 } from "@switchboard-xyz/on-demand";
 
 const MAINNET_SUI_RPC = "https://fullnode.mainnet.sui.io:443";
+
 const client = new SuiClient({
   url: MAINNET_SUI_RPC,
 });
