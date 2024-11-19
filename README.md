@@ -2,10 +2,6 @@
 
 **DISCLAIMER: SWITCHBOARD ON-DEMAND FOR SUI IS UNAUDITED. USE AT YOUR OWN RISK.**
 
-# Switchboard On-Demand Integration Guide
-
-This guide covers the setup and use of Switchboard data feeds within your project, using the `Aggregator` module for updating feeds and integrating `Switchboard` in Move.
-
 ## Active Deployments
 
 The Switchboard On-Demand service is currently deployed on the following networks:
