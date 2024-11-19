@@ -1,4 +1,4 @@
-# sui
+# Switchboard On-Demand on Sui
 
 **DISCLAIMER: SWITCHBOARD ON-DEMAND FOR SUI IS UNAUDITED. USE AT YOUR OWN RISK.**
 
