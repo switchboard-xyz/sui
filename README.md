@@ -55,7 +55,7 @@ const crossbar = new CrossbarClient("https://crossbar.switchboard.xyz");
 const queue = isMainnetSui ? ON_DEMAND_MAINNET_QUEUE : ON_DEMAND_TESTNET_QUEUE;
 
 // Store some job definition
-const { feedHash } = await crossbarClient.store(queue.pubkey.toBase58(), jobs);
+const { feedHash } = await crossbarClient.store(queue.toBase58(), jobs);
 
 // Create a SwitchboardClient using the SuiClient configured with your favorite RPC on testnet or mainnet
 const sb = new SwitchboardClient(suiClient);
