@@ -256,6 +256,33 @@ public(package) fun add_result(
     };
 }
 
+// delete the aggregator
+public(package) fun delete(aggregator: Aggregator) {
+    let Aggregator {
+        id,
+        queue: _,
+        name: _,
+        authority: _,
+        feed_hash: _,
+        min_sample_size: _,
+        max_staleness_seconds: _,
+        max_variance: _,
+        min_responses: _,
+        created_at_ms: _,
+        current_result: _,
+        update_state,
+        version: _,
+    } = aggregator;
+
+    let UpdateState {
+        results: _,
+        curr_idx: _,
+    } = update_state;
+
+    // destroy the id
+    id.delete();
+}
+
 
 // add a new result to the aggregator
 fun set_update(
@@ -493,6 +520,32 @@ fun valid_update_indices(update_state: &UpdateState, max_staleness_ms: u64, now_
     };
 
     valid_updates
+}
+
+#[test_only]
+public fun set_current_value(
+    aggregator: &mut Aggregator,
+    result: Decimal,
+    timestamp_ms: u64,
+    min_timestamp_ms: u64,
+    max_timestamp_ms: u64,
+    min_result: Decimal,
+    max_result: Decimal,
+    stdev: Decimal, 
+    range: Decimal,
+    mean: Decimal,
+) {
+    aggregator.current_result = CurrentResult {
+        result,
+        timestamp_ms,
+        min_timestamp_ms,
+        max_timestamp_ms,
+        min_result,
+        max_result,
+        stdev,
+        range,
+        mean,
+    }
 }
 
 
