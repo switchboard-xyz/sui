@@ -1,0 +1,82 @@
+.vscode/
+
+# until we switch to bun monorepo fully
+bun.lockb
+
+# Javascript
+**/node_modules
+dist
+!javascript/mercurial-stable-swap-n-pool/dist
+
+javascript/evm-functions-bindings/
+apps/function-simulator/lib/
+javascript/**/lib
+#!chains/evm/*/lib
+
+**/measurement.txt
+**/*.list
+
+**/qvn.tar
+
+# Rust
+vendor
+
+# EVM
+chains/evm/*/abis
+chains/evm/examples/*/abis
+
+chains/evm/*/artifacts
+chains/evm/examples/*/artifacts
+
+chains/evm/*/bindings
+chains/evm/examples/*/bindings
+
+chains/evm/*/cache
+chains/evm/examples/*/cache
+
+chains/evm/*/cache_hardhat
+chains/evm/examples/*/cache_hardhat
+
+chains/evm/*/out
+chains/evm/examples/*/out
+
+chains/evm/*/typechain_types
+chains/evm/examples/*/typechain_types
+
+build
+tsconfig.tsbuildinfo
+.turbo
+.firebase
+yarn.lock
+package-lock.json
+
+*.env
+.switchboard
+
+# Python
+__pycache__
+.pytest_cache
+
+# Rust
+**/target
+**/target/**
+.crates
+
+# Misc
+.keypairs
+*-keypair*.json
+.archive
+*-error.log
+*-debug.log
+.DS_Store
+
+# VS Code
+*.code-workspace
+
+# Solana
+.anchor
+
+# Aptos
+.aptos
+
+javascript/on-demand/docs/**

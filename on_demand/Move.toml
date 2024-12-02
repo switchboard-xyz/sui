@@ -1,11 +1,11 @@
 [package]
 name = "Switchboard"
 edition = "2024.beta"
-version = "0.0.1"
-published-at = "0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989"
+version = "0.0.2"
+published-at = "0x4fd0845a967a4d711650a402ad32b8fb269beef9ad7d86373f45935ee9af6e9f"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
  
 [addresses]
 switchboard = "0x0"
