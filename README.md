@@ -1,10 +1,6 @@
-# sui
+# Switchboard On-Demand on Sui
 
-**DISCLAIMER: SWITCHBOARD ON-DEMAND FOR SUI IS UNAUDITED. USE AT YOUR OWN RISK.**
-
-# Switchboard On-Demand Integration Guide
-
-This guide covers the setup and use of Switchboard data feeds within your project, using the `Aggregator` module for updating feeds and integrating `Switchboard` in Move.
+**DISCLAIMER: ORACLE CODE AND CORE LOGIC ARE AUDITED - THE AUDIT FOR THIS ON-CHAIN ADAPTER IS PENDING**
 
 ## Active Deployments
 
@@ -59,7 +55,7 @@ const crossbar = new CrossbarClient("https://crossbar.switchboard.xyz");
 const queue = isMainnetSui ? ON_DEMAND_MAINNET_QUEUE : ON_DEMAND_TESTNET_QUEUE;
 
 // Store some job definition
-const { feedHash } = await crossbarClient.store(queue.pubkey.toBase58(), jobs);
+const { feedHash } = await crossbarClient.store(queue.toBase58(), jobs);
 
 // Create a SwitchboardClient using the SuiClient configured with your favorite RPC on testnet or mainnet
 const sb = new SwitchboardClient(suiClient);
