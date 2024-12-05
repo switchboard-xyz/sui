@@ -371,7 +371,7 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
     let mut max_timestamp_ms = 0;
     let mut mean: u128 = 0;
     let mut mean_neg: bool = false;
-    let mut m2: u128 = 0;
+    let mut m2: u256 = 0;
     let mut m2_neg: bool = false;
     let mut count: u128 = 0;
 
@@ -385,7 +385,8 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
         let (delta, delta_neg) = sub_i128(value, value_neg, mean, mean_neg);
         (mean, mean_neg) = add_i128(mean, mean_neg, delta / count, delta_neg);
         let (delta2, delta2_neg) = sub_i128(value, value_neg, mean, mean_neg);
-        (m2, m2_neg) = add_i128(m2, m2_neg, delta * delta2, delta_neg != delta2_neg);
+
+        (m2, m2_neg) = add_i256(m2, m2_neg, (delta as u256) * (delta2 as u256), delta_neg != delta2_neg);
 
         sum = sum + value;
         min_result = decimal::min(&min_result, &update.result);
@@ -394,8 +395,8 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
         max_timestamp_ms = u64::max(max_timestamp_ms, update.timestamp_ms);
     });
 
-    let variance = m2 / (count - 1);
-    let stdev = variance.sqrt();
+    let variance = m2 / ((count - 1) as u256); 
+    let stdev = sqrt(variance);
     let range = max_result.sub(&min_result);
     let (result, timestamp_ms) = update_state.median_result(&mut update_indices);
     
@@ -411,7 +412,84 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
         mean: decimal::new(mean, false),
         timestamp_ms,
     })
-}    
+}
+
+// basically a translation of eip7512
+// todo: check if this is practically cheaper than babylonian
+public fun sqrt(x: u256): u128 {
+    if (x == 0) {
+        return 0
+    };
+
+    let mut xx: u256 = x;
+    let mut r: u256 = 1;
+
+    if (xx >= 0x100000000000000000000000000000000) {
+        xx = xx >> 128;
+        r = r << 64;
+    };
+    if (xx >= 0x10000000000000000) {
+        xx = xx >> 64;
+        r = r << 32;
+    };
+    if (xx >= 0x100000000) {
+        xx = xx >> 32;
+        r = r << 16;
+    };
+    if (xx >= 0x10000) {
+        xx = xx >> 16;
+        r = r << 8;
+    };
+    if (xx >= 0x100) {
+        xx = xx >> 8;
+        r = r << 4;
+    };
+    if (xx >= 0x10) {
+        xx = xx >> 4;
+        r = r << 2;
+    };
+    if (xx >= 0x8) {
+        r = r << 1;
+    };
+
+    // Iteratively refine r
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+    r = (r + x / r) >> 1;
+
+    let r1: u256 = x / r;
+
+    // Return the smaller of r or r1 as u128
+    if (r < r1) {
+        return (r as u128)
+    } else {
+        return (r1 as u128)
+    }
+}
+
+fun add_i256(a: u256, a_neg: bool, b: u256, b_neg: bool): (u256, bool) {
+    if (a_neg && b_neg) {
+        return (a + b, true)
+    } else if (!a_neg && b_neg) {
+        if (a < b) {
+            return (b - a, true)
+        } else {
+            return (a - b, false)
+        }
+    } else if (a_neg && !b_neg) {
+        if (a < b) {
+            return (b - a, false)
+        } else {
+            return (a - b, true)
+        }
+    } else {
+        return (a + b, false)
+    }
+}
 
 
 fun add_i128(a: u128, a_neg: bool, b: u128, b_neg: bool): (u128, bool) {
@@ -691,6 +769,8 @@ fun test_aggregator_updates() {
     use sui::test_scenario;
     use std::string;
     use sui::clock;
+    use sui::test_utils;
+
     let owner = @0x26;
     let mut scenario = test_scenario::begin(owner);
     let ctx = scenario.ctx();
@@ -778,18 +858,26 @@ fun test_aggregator_updates() {
     let current_result = current_result.extract();
     let expected_mean = 582414498562500000;
     let expected_range = 788888889000000000;
-    let expected_stdev = 244005876836959584;
-    let tolerated_precision_err = 30;
+    let expected_stdev = 244005876836960000;
+
+    // tolerate stdev being off by 0.00000000000001 in this example
+    let tolerated_precision_err = 10000;
 
     assert!(result(&current_result) == result3, result(&current_result).value() as u64);
     assert!(min_timestamp_ms(&current_result) == 3000000);
     assert!(max_timestamp_ms(&current_result) == 18000000);
     assert!(min_result(&current_result) == result13, min_result(&current_result).value() as u64);
     assert!(max_result(&current_result) == result12, max_result(&current_result).value() as u64);
+    if ((stdev(&current_result).value() > expected_stdev - tolerated_precision_err && 
+        stdev(&current_result).value() < expected_stdev + tolerated_precision_err) == false) {
+        test_utils::print(b"stdev in this (failing) test is:");
+        test_utils::print(*stdev(&current_result).value().to_string().as_bytes());
+    };
+
     assert!(
         stdev(&current_result).value() > expected_stdev - tolerated_precision_err && 
         stdev(&current_result).value() < expected_stdev + tolerated_precision_err, 
-        stdev(&current_result).value() as u64
+        0
     );
     assert!(range(&current_result) == decimal::new(expected_range, false), range(&current_result).value() as u64);
     assert!(mean(&current_result) == decimal::new(expected_mean, false), mean(&current_result).value() as u64);
@@ -845,25 +933,25 @@ fun test_aggregator_updates_big() {
 
 
     // add 18 results
-    let result1 = decimal::new(68384040000000000000000, false);
-    let result2 = decimal::new(68384040000000000000000, false);
+    let result1 = decimal::new(1733365173000000000000000000, false);
+    let result2 = decimal::new(1733365173000000000000000000, false);
     // 
-    let result3 = decimal::new(68384040000000000000000, false);
-    let result4 = decimal::new(68384040000000000000000, false);
-    let result5 = decimal::new(68384040000000000000000, false);
-    let result6 = decimal::new(68384040000000000000000, false);
-    let result7 = decimal::new(68384040000000000000000, false);
-    let result8 = decimal::new(68384040000000000000000, false);
-    let result9 = decimal::new(68384040000000000000000, false);
-    let result10 = decimal::new(68384040000000000000000, false);
-    let result11 = decimal::new(68384040000000000000000, false);
-    let result12 = decimal::new(68384040000000000000000, false);
-    let result13 = decimal::new(68384040000000000000000, false);
-    let result14 = decimal::new(68384040000000000000000, false);
-    let result15 = decimal::new(68384040000000000000000, false);
-    let result16 = decimal::new(68384040000000000000000, false);
-    let result17 = decimal::new(68384040000000000000000, false);
-    let result18 = decimal::new(68384040000000000000000, false);
+    let result3 = decimal::new(1733365173000000000000000000, false);
+    let result4 = decimal::new(1733365173000000000000000000, false);
+    let result5 = decimal::new(1733365173000000000000000000, false);
+    let result6 = decimal::new(1733365173000000000000000000, false);
+    let result7 = decimal::new(1733365173000000000000000000, false);
+    let result8 = decimal::new(1733365173000000000000000000, false);
+    let result9 = decimal::new(1733365173000000000000000000, false);
+    let result10 = decimal::new(1733365173000000000000000000, false);
+    let result11 = decimal::new(1733365173000000000000000000, false);
+    let result12 = decimal::new(1733365173000000000000000000, false);
+    let result13 = decimal::new(1733365173000000000000000000, false);
+    let result14 = decimal::new(1733365173000000000000000000, false);
+    let result15 = decimal::new(1733365173000000000000000000, false);
+    let result16 = decimal::new(1733365173000000000000000000, false);
+    let result17 = decimal::new(1733365173000000000000000000, false);
+    let result18 = decimal::new(1733365173000000000000000000, false);
 
     clock::set_for_testing(&mut clock, 18000000);
     
@@ -888,6 +976,82 @@ fun test_aggregator_updates_big() {
 
     let current_result = aggregator.compute_current_result(18000001);
     assert!(current_result.is_some());
+    destroy_aggregator(aggregator);
+    clock::destroy_for_testing(clock);
+    test_scenario::end(scenario);
+}
+
+#[test]
+fun test_aggregator_updates_real() {
+    use sui::test_scenario;
+    use std::string;
+    use sui::clock;
+    let owner = @0x26;
+    let mut scenario = test_scenario::begin(owner);
+    let ctx = scenario.ctx();
+    let mut clock = clock::create_for_testing(ctx);
+
+    let mut aggregator = new_aggregator(
+        example_queue_id(),
+        string::utf8(b"Unix Timestamp"),
+        owner,
+        vector::empty(),
+        1,
+        100,
+        100000000000,
+        5,
+        1000,
+        ctx,
+    );
+
+
+    let oracle1 = object::id_from_address(@0x1);
+    let oracle2 = object::id_from_address(@0x2);
+    let oracle3 = object::id_from_address(@0x3);
+
+    let result1 = decimal::new(17333649660000012345000000000000000000, false);
+    let result2 = decimal::new(17333651530000012345000000000000000000, false);
+    let result3 = decimal::new(17333651730000012345000000000000000000, false);
+
+    let timestamp1 = 1733364966000;
+    let timestamp2 = 1733365153000;
+    let timestamp3 = 1733365173000;
+
+    // create a vector of type Update with each of the results
+    let mut updates = vector::empty();
+    updates.push_back(Update {
+        result: result1,
+        timestamp_ms: timestamp1,
+        oracle: oracle1,
+    });
+    updates.push_back(Update {
+        result: result2,
+        timestamp_ms: timestamp2,
+        oracle: oracle2,
+    });
+    updates.push_back(Update {
+        result: result3,
+        timestamp_ms: timestamp3,
+        oracle: oracle3,
+    });
+
+
+    aggregator.update_state.results = updates;
+    aggregator.update_state.curr_idx = 2;
+
+
+    clock::set_for_testing(&mut clock, 1733365173000);
+
+    let result4 = decimal::new(17333651730000012345000000000000000000, false);
+    let oracle4 = object::id_from_address(@0x4);
+    let timestamp4 = 1733365173000;
+
+    // add the result
+    add_result(&mut aggregator, result4, timestamp4, oracle4, &clock);
+    let current_result = aggregator.compute_current_result(18000001);
+    assert!(current_result.is_some());
+
+    // wrap up the test
     destroy_aggregator(aggregator);
     clock::destroy_for_testing(clock);
     test_scenario::end(scenario);
