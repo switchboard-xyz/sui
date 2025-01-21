@@ -1,15 +1,23 @@
-import type { SuiClient } from "@mysten/sui/client";
-import type { Transaction, CallArg } from "@mysten/sui/transactions";
+import type { CommonOptions, SwitchboardClient } from "../index.js";
 import {
-  fromHex,
-  toBase58,
-  toHex,
+  getFieldsFromObject,
+  ObjectParsingHelper,
+  Queue,
+  solanaProgramCache,
+  suiQueueCache,
+} from "../index.js";
+
+import type { SuiGraphQLClient } from "@mysten/sui/graphql";
+import { graphql } from "@mysten/sui/graphql/schemas/2024.4";
+import type { Transaction } from "@mysten/sui/transactions";
+import {
   fromBase58,
   fromBase64,
+  fromHex,
   SUI_CLOCK_OBJECT_ID,
+  toBase58,
+  toHex,
 } from "@mysten/sui/utils";
-import { SuiGraphQLClient } from "@mysten/sui/graphql";
-import { graphql } from "@mysten/sui/graphql/schemas/2024.4";
 import type {
   BridgeEnclaveResponse,
   Queue as SolanaQueue,
@@ -20,16 +28,6 @@ import {
   ON_DEMAND_DEVNET_GUARDIAN_QUEUE,
   ON_DEMAND_MAINNET_GUARDIAN_QUEUE,
 } from "@switchboard-xyz/on-demand";
-
-import {
-  suiQueueCache,
-  solanaProgramCache,
-  SwitchboardClient,
-  CommonOptions,
-  getFieldsFromObject,
-  ObjectParsingHelper,
-  Queue,
-} from "../index.js";
 
 export interface OracleInitParams extends CommonOptions {
   oracleKey: string;
@@ -171,7 +169,7 @@ export class Oracle {
         .filter((m) => m);
     };
 
-    let bridgeMessages: BridgeEnclaveResponse[] = [];
+    const bridgeMessages: BridgeEnclaveResponse[] = [];
 
     // try 3 times to get the bridge messages
     for (let i = 0; i < 3; i++) {

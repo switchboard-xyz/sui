@@ -1,3 +1,8 @@
+import { Oracle } from "./oracle/index.js";
+import type { QueueData } from "./queue/index.js";
+import { Queue } from "./queue/index.js";
+import { State } from "./state/index.js";
+
 import { TTLCache } from "@brokerloop/ttlcache";
 import type {
   MoveStruct,
@@ -8,25 +13,22 @@ import type { SuiClient } from "@mysten/sui/client";
 import type { Queue as SolanaQueue } from "@switchboard-xyz/on-demand";
 import BN from "bn.js";
 
-import { Oracle } from "./oracle/index.js";
-import type { QueueData } from "./queue/index.js";
-import { Queue } from "./queue/index.js";
-import { State } from "./state/index.js";
 export { Oracle, Queue, State };
 
 export * from "./aggregator/index.js";
 export * from "./oracle/index.js";
 export * from "./queue/index.js";
 export * from "./state/index.js";
+export * from "@switchboard-xyz/on-demand";
 
 export const ON_DEMAND_MAINNET_OBJECT_PACKAGE_ID =
-  "0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8";
+  "0xc3c7e6eb7202e9fb0389a2f7542b91cc40e4f7a33c02554fec11c4c92f938ea3";
 export const ON_DEMAND_MAINNET_STATE_OBJECT_ID =
-  "0x90a2829005435005300abaf7ce8115814b38c8d42a6de5aaf311774c60603b68";
+  "0x93d2a8222bb2006d16285ac858ec2ae5f644851917504b94debde8032664a791";
 export const ON_DEMAND_TESTNET_OBJECT_PACKAGE_ID =
-  "0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989";
+  "0xdd96e1c8d6d61c4642b9b73eefb1021cc5f93f489b794bca11c81d55fcf43ce2";
 export const ON_DEMAND_TESTNET_STATE_OBJECT_ID =
-  "0xd0f5c1388f7d835262315ee2175390b4a3d38ddb8e8dc007c49447f5d03c2013";
+  "0x2086fdde07a8f4726a3fc72d6ef1021343a781d42de6541ca412cf50b4339ad6";
 
 // ==============================================================================
 // Caching for Fetch Update Ix
