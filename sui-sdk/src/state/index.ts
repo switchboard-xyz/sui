@@ -1,9 +1,7 @@
+import type { SwitchboardClient } from "../index.js";
+import { getFieldsFromObject, ObjectParsingHelper } from "../index.js";
+
 import type { SuiClient } from "@mysten/sui/client";
-import {
-  getFieldsFromObject,
-  ObjectParsingHelper,
-  SwitchboardClient,
-} from "../index.js";
 
 export interface StateData {
   id: string;

@@ -6,8 +6,8 @@
 
 The Switchboard On-Demand service is currently deployed on the following networks:
 
-- Mainnet: [0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8](https://suiscan.xyz/mainnet/object/0x0b884dbc39d915f32a82cc62dabad75ca3efd3c568c329eba270b03c6f58cbd8)
-- Testnet: [0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989](https://suiscan.xyz/testnet/object/0x81fc6bbc64b7968e631b2a5b3a88652f91a617534e3755efab2f572858a30989)
+- Mainnet: [0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655](https://suiscan.xyz/mainnet/object/0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655)
+- Testnet: [0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6](https://suiscan.xyz/testnet/object/0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6)
 
 ## Typescript-SDK Installation
 

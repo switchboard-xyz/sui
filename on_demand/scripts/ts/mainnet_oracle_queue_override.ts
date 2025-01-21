@@ -1,4 +1,4 @@
-// sui client upgrade --upgrade-capability 0xda0d1de2ce8afde226f66b1963c3f6afc929ab49eaeed951c723a481499e31e9
+// sui client upgrade --upgrade-capability 0x75c9afab64928bbb62039f0b4f4bb4437e5312557583c4f3d350affd705cb1ba
 import { SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
@@ -7,7 +7,6 @@ import {
   Oracle,
   Queue,
   State,
-  Aggregator,
   ON_DEMAND_MAINNET_STATE_OBJECT_ID,
   SwitchboardClient,
   ON_DEMAND_MAINNET_OBJECT_PACKAGE_ID,
@@ -17,7 +16,7 @@ import * as path from "path";
 import * as os from "os";
 import { SuiGraphQLClient } from "@mysten/sui/graphql";
 import {
-  getDefaultGuardianQueue,
+  getDefaultQueue,
   Oracle as SolanaOracle,
 } from "@switchboard-xyz/on-demand";
 
@@ -64,7 +63,7 @@ const userAddress = keypair.getPublicKey().toSuiAddress();
 
 console.log(`User account ${userAddress} loaded.`);
 
-console.log("Initializing MAINNET Guardian Queue Setup");
+console.log("Initializing MAINNET Oracle Queue Setup");
 const chainID = await client.getChainIdentifier();
 
 console.log(`Chain ID: ${chainID}`);
@@ -74,7 +73,7 @@ const stateData = await state.loadData();
 
 console.log("State Data: ", stateData);
 
-const queue = new Queue(sb, stateData.guardianQueue);
+const queue = new Queue(sb, stateData.oracleQueue);
 console.log("Queue Data: ", await queue.loadData());
 
 const switchboardObjectAddress = ON_DEMAND_MAINNET_OBJECT_PACKAGE_ID;
@@ -86,88 +85,81 @@ const allOracles = await queue.loadOracleData();
 console.log("All Oracles: ", allOracles);
 
 //================================================================================================
-// Initialize Feed Flow
+// Initialize Oracles
 //================================================================================================
 
-const aggregators = await Aggregator.loadAllFeeds(
+// Load all the oracles on the solana queue
+const solanaQueue = await getDefaultQueue();
+const solanaOracleKeys = await solanaQueue.fetchOracleKeys();
+const solanaOracles = await SolanaOracle.loadMany(
+  solanaQueue.program,
+  solanaOracleKeys
+).then((oracles) => {
+  oracles.forEach((o, i) => {
+    o.pubkey = solanaOracleKeys[i];
+  });
+  return oracles;
+});
+
+// Initialize the oracles
+console.log(
+  "Initializing/Updating Solana Oracles, oracles:",
+  solanaOracles.length
+);
+
+const oracleTx = new Transaction();
+
+let oracleInits = 0;
+let oracleUpdates = 0;
+
+for (const oracle of solanaOracles) {
+  if (allOracles.find((o) => o.oracleKey === oracle.pubkey.toBase58())) {
+    const o = allOracles.find((o) => o.oracleKey === oracle.pubkey.toBase58());
+    // console.log(o);
+    if (o && o.secp256k1Key === toHex(oracle.enclave.secp256K1Signer)) {
+      console.log("Oracle already initialized");
+      continue;
+    } else if (o) {
+      console.log("Oracle found, updating", oracle.pubkey.toBase58());
+      oracleUpdates++;
+      queue.overrideOracleTx(oracleTx, {
+        switchboardAddress: switchboardObjectAddress,
+        oracleQueueId: stateData.oracleQueue,
+        oracle: o.id, // sui oracle id
+        secp256k1Key: toHex(oracle.enclave.secp256K1Signer),
+        mrEnclave: toHex(oracle.enclave.mrEnclave),
+        expirationTimeMs: Date.now() + 1000 * 60 * 60 * 24 * 365 * 5,
+      });
+    }
+  } else {
+    console.log("Oracle not found, initializing", oracle.pubkey.toBase58());
+    oracleInits++;
+    console.log(toHex(oracle.pubkey.toBuffer()));
+    Oracle.initTx(sb, oracleTx, {
+      oracleKey: toHex(oracle.pubkey.toBuffer()),
+    });
+  }
+}
+
+const senderClient = new SuiClient({
+  url: MAINNET_SUI_RPC,
+});
+
+if (oracleInits > 0 || oracleUpdates > 0) {
+  const res = await senderClient.signAndExecuteTransaction({
+    signer: keypair,
+    transaction: oracleTx,
+    options: {
+      showEffects: true,
+      showObjectChanges: true,
+    },
+  });
+  console.log(res);
+}
+
+// load all oracles
+const allOraclesAfter = await Oracle.loadAllOracles(
   gql,
   switchboardObjectAddress
 );
-
-console.log(aggregators);
-
-const ag = new Aggregator(sb, aggregators[3].id);
-console.log("Aggregator Data: ", await ag.loadData());
-
-// try creating a feed
-const feedName = "BTC/USDT";
-
-// BTC USDT
-const feedHash =
-  "0x013b9b2fb2bdd9e3610df0d7f3e31870a1517a683efb0be2f77a8382b4085833";
-const minSampleSize = 1;
-const maxStalenessSeconds = 60;
-const maxVariance = 1e9;
-const minResponses = 1;
-
-let transaction = new Transaction();
-await Aggregator.initTx(sb, transaction, {
-  feedHash,
-  name: feedName,
-  authority: userAddress,
-  minSampleSize,
-  maxStalenessSeconds,
-  maxVariance,
-  minResponses,
-  oracleQueueId: stateData.oracleQueue,
-});
-const res = await client.signAndExecuteTransaction({
-  signer: keypair,
-  transaction,
-  options: {
-    showEffects: true,
-  },
-});
-let aggregatorId;
-res.effects?.created?.forEach((c) => {
-  if (c.reference.objectId) {
-    aggregatorId = c.reference.objectId;
-  }
-});
-
-console.log("Aggregator init response:", res);
-
-if (!aggregatorId) {
-  throw new Error("Failed to create aggregator");
-}
-
-// wait for the transaction to be confirmed
-await client.waitForTransaction({
-  digest: res.digest,
-});
-
-const aggregator = new Aggregator(sb, aggregatorId);
-
-console.log("Aggregator Data: ", await aggregator.loadData());
-
-let feedTx = new Transaction();
-
-const suiQueue = new Queue(sb, stateData.oracleQueue);
-const suiQueueData = await suiQueue.loadData();
-
-console.log("Sui Queue Data: ", suiQueueData);
-
-const response = await aggregator.fetchUpdateTx(feedTx);
-
-console.log("Fetch Update Response: ", response);
-
-// send the transaction
-const feedResponse = await client.signAndExecuteTransaction({
-  signer: keypair,
-  transaction: feedTx,
-  options: {
-    showEffects: true,
-  },
-});
-
-console.log("Feed response:", feedResponse);
+console.log("All Oracles After: ", allOraclesAfter);

@@ -9,7 +9,7 @@ use switchboard::decimal::{Self, Decimal};
 const MAX_RESULTS: u64 = 16;
 const VERSION: u8 = 1;
 
-public struct CurrentResult has drop, store {
+public struct CurrentResult has copy, drop, store {
     result: Decimal,
     timestamp_ms: u64,
     min_timestamp_ms: u64,
@@ -310,9 +310,6 @@ fun set_update(
     if (results.length() > 0) {
         let last_result = &results[last_idx];
         if (timestamp_ms < last_result.timestamp_ms) {
-
-            // todo: remove this assert
-            assert!(false, timestamp_ms);
             return
         };
     };

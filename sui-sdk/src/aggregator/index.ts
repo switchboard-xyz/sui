@@ -1,37 +1,35 @@
-import type { SuiClient } from "@mysten/sui/client";
-import type { Transaction } from "@mysten/sui/transactions";
+import type { CommonOptions, SwitchboardClient } from "../index.js";
 import {
-  fromHex,
-  toHex,
-  toBase58,
-  fromBase64,
-  SUI_TYPE_ARG,
-} from "@mysten/sui/utils";
-import { SUI_CLOCK_OBJECT_ID, toBase64 } from "@mysten/sui/utils";
-import { SuiGraphQLClient } from "@mysten/sui/graphql";
-import { graphql } from "@mysten/sui/graphql/schemas/2024.4";
-import BN from "bn.js";
-import type {
-  FeedEvalResponse,
-  Queue as SolanaQueue,
-} from "@switchboard-xyz/on-demand";
-import {
-  getDefaultQueue,
-  getDefaultDevnetQueue,
-  ON_DEMAND_DEVNET_QUEUE,
-  ON_DEMAND_MAINNET_QUEUE,
-  CrossbarClient,
-  OracleJob,
-} from "@switchboard-xyz/on-demand";
-import {
-  SwitchboardClient,
-  CommonOptions,
   getFieldsFromObject,
   ObjectParsingHelper,
   Queue,
   solanaProgramCache,
   suiQueueCache,
 } from "../index.js";
+
+import type { SuiGraphQLClient } from "@mysten/sui/graphql";
+import { graphql } from "@mysten/sui/graphql/schemas/2024.4";
+import type { Transaction } from "@mysten/sui/transactions";
+import {
+  fromBase64,
+  fromHex,
+  SUI_CLOCK_OBJECT_ID,
+  SUI_TYPE_ARG,
+  toBase58,
+  toHex,
+} from "@mysten/sui/utils";
+import { CrossbarClient, OracleJob } from "@switchboard-xyz/common";
+import type {
+  FeedEvalResponse,
+  Queue as SolanaQueue,
+} from "@switchboard-xyz/on-demand";
+import {
+  getDefaultDevnetQueue,
+  getDefaultQueue,
+  ON_DEMAND_DEVNET_QUEUE,
+  ON_DEMAND_MAINNET_QUEUE,
+} from "@switchboard-xyz/on-demand";
+import type BN from "bn.js";
 
 export interface AggregatorInitParams extends CommonOptions {
   authority: string;
@@ -77,7 +75,7 @@ export interface AggregatorFetchUpdateIxParams extends CommonOptions {
   queue?: Queue;
 }
 
-export interface CurrentResult {
+export interface CurrentResultData {
   maxResult: BN;
   maxTimestamp: number;
   mean: BN;
@@ -98,7 +96,7 @@ export interface AggregatorData {
   id: string;
   authority: string;
   createdAtMs: number;
-  currentResult: CurrentResult;
+  currentResult: CurrentResultData;
   feedHash: string;
   maxStalenessSeconds: number;
   maxVariance: number;
@@ -229,13 +227,13 @@ export class Aggregator {
 
     // load the solana queue from cache or fetch it
     let solanaQueue: SolanaQueue;
-    if (suiQueue.queueKey == ON_DEMAND_MAINNET_QUEUE.toBase58()) {
+    if (suiQueue.queueKey === ON_DEMAND_MAINNET_QUEUE.toBase58()) {
       solanaQueue = solanaProgramCache.get(ON_DEMAND_MAINNET_QUEUE.toBase58());
       if (!solanaQueue) {
         solanaQueue = await getDefaultQueue(options?.solanaRPCUrl);
         solanaProgramCache.set(ON_DEMAND_MAINNET_QUEUE.toBase58(), solanaQueue);
       }
-    } else if (suiQueue.queueKey == ON_DEMAND_DEVNET_QUEUE.toBase58()) {
+    } else if (suiQueue.queueKey === ON_DEMAND_DEVNET_QUEUE.toBase58()) {
       solanaQueue = solanaProgramCache.get(ON_DEMAND_DEVNET_QUEUE.toBase58());
       if (!solanaQueue) {
         solanaQueue = await getDefaultDevnetQueue(options?.solanaRPCUrl);
@@ -303,7 +301,7 @@ export class Aggregator {
     // map the responses into the tx
     validResponses.forEach((response, i) => {
       const oracle = suiQueue.existingOracles.find(
-        (o) => o.oracleKey == toBase58(fromHex(response.oracle_pubkey))
+        (o) => o.oracleKey === toBase58(fromHex(response.oracle_pubkey))
       )!;
 
       const signature = Array.from(fromBase64(response.signature));
@@ -402,10 +400,13 @@ export class Aggregator {
   public static async loadAllFeeds(
     graphqlClient: SuiGraphQLClient,
     switchboardAddress: string
-  ) {
-    const fetchAggregatorsQuery = graphql(`
-      query {
+  ): Promise<AggregatorData[]> {
+    // Query to fetch Aggregator objects with pagination supported.
+    const query = graphql(`
+      query($cursor: String) {
         objects(
+          first: 50,
+          after: $cursor,
           filter: {
             type: "${switchboardAddress}::aggregator::Aggregator"
           }
@@ -419,74 +420,84 @@ export class Aggregator {
               }
             }
           }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
         }
       }
     `);
-    const results = await graphqlClient.query({
-      query: fetchAggregatorsQuery,
-    });
 
-    const aggregators: AggregatorData[] =
-      results.data?.objects?.nodes?.map((result) => {
-        const moveObject = result.asMoveObject.contents.json as any;
+    const parseAggregator = (moveObject: any): AggregatorData => {
+      return {
+        id: moveObject.id,
+        authority: moveObject.authority,
+        createdAtMs: ObjectParsingHelper.asNumber(moveObject.created_at_ms),
+        currentResult: {
+          maxResult: ObjectParsingHelper.asBN(
+            moveObject.current_result.max_result
+          ),
+          maxTimestamp: ObjectParsingHelper.asNumber(
+            moveObject.current_result.max_timestamp_ms
+          ),
+          mean: ObjectParsingHelper.asBN(moveObject.current_result.mean),
+          minResult: ObjectParsingHelper.asBN(
+            moveObject.current_result.min_result
+          ),
+          minTimestamp: ObjectParsingHelper.asNumber(
+            moveObject.current_result.min_timestamp_ms
+          ),
+          range: ObjectParsingHelper.asBN(moveObject.current_result.range),
+          result: ObjectParsingHelper.asBN(moveObject.current_result.result),
+          stdev: ObjectParsingHelper.asBN(moveObject.current_result.stdev),
+        },
+        feedHash: toHex(ObjectParsingHelper.asUint8Array(moveObject.feed_hash)),
+        maxStalenessSeconds: ObjectParsingHelper.asNumber(
+          moveObject.max_staleness_seconds
+        ),
+        maxVariance: ObjectParsingHelper.asNumber(moveObject.max_variance),
+        minResponses: ObjectParsingHelper.asNumber(moveObject.min_responses),
+        minSampleSize: ObjectParsingHelper.asNumber(moveObject.min_sample_size),
+        name: ObjectParsingHelper.asString(moveObject.name),
+        queue: ObjectParsingHelper.asString(moveObject.queue),
+        updateState: {
+          currIdx: ObjectParsingHelper.asNumber(
+            moveObject.update_state.curr_idx
+          ),
+          results: moveObject.update_state.results.map((r: any) => {
+            const oracleId = r.oracle;
+            const value = ObjectParsingHelper.asBN(r.result);
+            const timestamp = parseInt(r.timestamp_ms);
+            return {
+              oracle: oracleId,
+              value,
+              timestamp,
+            };
+          }),
+        },
+      };
+    };
 
-        // build the data object from moveObject which looks like the above json
-        return {
-          id: moveObject.id,
-          authority: moveObject.authority,
-          createdAtMs: ObjectParsingHelper.asNumber(moveObject.created_at_ms),
-          currentResult: {
-            maxResult: ObjectParsingHelper.asBN(
-              moveObject.current_result.max_result
-            ),
-            maxTimestamp: ObjectParsingHelper.asNumber(
-              moveObject.current_result.max_timestamp_ms
-            ),
-            mean: ObjectParsingHelper.asBN(moveObject.current_result.mean),
-            minResult: ObjectParsingHelper.asBN(
-              moveObject.current_result.min_result
-            ),
-            minTimestamp: ObjectParsingHelper.asNumber(
-              moveObject.current_result.min_timestamp_ms
-            ),
-            range: ObjectParsingHelper.asBN(moveObject.current_result.range),
-            result: ObjectParsingHelper.asBN(moveObject.current_result.result),
-            stdev: ObjectParsingHelper.asBN(moveObject.current_result.stdev),
-          },
-          feedHash: toHex(
-            ObjectParsingHelper.asUint8Array(moveObject.feed_hash)
-          ),
-          maxStalenessSeconds: ObjectParsingHelper.asNumber(
-            moveObject.max_staleness_seconds
-          ),
-          maxVariance: ObjectParsingHelper.asNumber(moveObject.max_variance),
-          minResponses: ObjectParsingHelper.asNumber(moveObject.min_responses),
-          minSampleSize: ObjectParsingHelper.asNumber(
-            moveObject.min_sample_size
-          ),
-          name: ObjectParsingHelper.asString(moveObject.name),
-          queue: ObjectParsingHelper.asString(moveObject.queue),
-          updateState: {
-            currIdx: ObjectParsingHelper.asNumber(
-              moveObject.update_state.curr_idx
-            ),
-            results: moveObject.update_state.results.map((r: any) => {
-              const oracleId = r.oracle;
-              const value = ObjectParsingHelper.asBN(r.result);
-              const timestamp = parseInt(r.timestamp_ms);
-              return {
-                oracle: oracleId,
-                value,
-                timestamp,
-              };
-            }),
-          },
-        };
-      }) ?? [];
+    const fetchAggregators = async (cursor: string | null) => {
+      const results = await graphqlClient.query({
+        query,
+        variables: { cursor },
+      });
 
-    return aggregators;
+      const aggregators: AggregatorData[] =
+        results.data?.objects?.nodes?.map((result) => {
+          const moveObject = result.asMoveObject!.contents!.json as any;
+          // build the data object from moveObject which looks like the above json
+          return parseAggregator(moveObject);
+        }) ?? [];
+      const hasNextPage = results.data?.objects?.pageInfo?.hasNextPage ?? false;
+      const endCursor = results.data?.objects?.pageInfo?.endCursor ?? null;
+
+      // Recursively fetch the next page if there is one.
+      if (hasNextPage) aggregators.push(...(await fetchAggregators(endCursor)));
+      // Return the list of aggregators.
+      return aggregators;
+    };
+    return await fetchAggregators(null);
   }
 }
-
-// Alias Aggregator to PullFeed
-export const PullFeed = Aggregator;

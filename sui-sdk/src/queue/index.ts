@@ -1,6 +1,6 @@
 import type { CommonOptions, OracleData, SwitchboardClient } from "../index.js";
-import { Oracle } from "../oracle/index.js";
 import { getFieldsFromObject, ObjectParsingHelper } from "../index.js";
+import { Oracle } from "../oracle/index.js";
 
 import type { DynamicFieldInfo } from "@mysten/sui/client";
 import type { Transaction } from "@mysten/sui/transactions";

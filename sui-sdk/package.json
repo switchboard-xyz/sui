@@ -1,6 +1,6 @@
 {
   "name": "@switchboard-xyz/sui-sdk",
-  "version": "0.0.11",
+  "version": "0.0.16",
   "description": "API wrapper for intergating with the Switchboard program on our Sui implementation",
   "license": "MIT",
   "type": "module",
@@ -30,8 +30,8 @@
     "@brokerloop/ttlcache": "^3.2.3",
     "@coral-xyz/anchor": "0.30.1",
     "@mysten/sui": "^1.14.1",
-    "@switchboard-xyz/common": "^2.5.3",
-    "@switchboard-xyz/on-demand": "^1.2.51",
+    "@switchboard-xyz/common": "^2.5.11",
+    "@switchboard-xyz/on-demand": "^1.2.56",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {},
