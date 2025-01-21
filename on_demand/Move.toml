@@ -2,7 +2,7 @@
 name = "Switchboard"
 edition = "2024.beta"
 version = "0.0.2"
-published-at = "0xbd22434e506314abc0cd981447fbf42139fa04aa09b5a8a7d7789826883e8e0a"
+published-at = "0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655"
 
 # mainnet
 [dependencies]

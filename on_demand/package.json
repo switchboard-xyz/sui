@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@mysten/sui": "^1.11.0",
-    "@switchboard-xyz/sui-sdk": "0.0.5"
+    "@switchboard-xyz/sui-sdk": "workspace:^"
   }
 }
