@@ -120,7 +120,7 @@ console.log(res);
 
 ## Updating Feeds
 
-With Switchboard On-Demand, passing the PTB (proof-to-be) into the feed update method handles the update automatically.
+With Switchboard On-Demand, passing the PTB into the feed update method handles the update automatically.
 
 ```typescript
 const aggregator = new Aggregator(sb, aggregatorId);
