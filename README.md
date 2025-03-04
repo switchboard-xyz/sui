@@ -21,8 +21,6 @@
   </h4>
 </div>
 
-**DISCLAIMER: ORACLE CODE AND CORE LOGIC ARE AUDITED - THE AUDIT FOR THIS ON-CHAIN ADAPTER IS PENDING**
-
 ## Active Deployments
 
 The Switchboard On-Demand service is currently deployed on the following networks:
@@ -224,3 +222,5 @@ public entry fun use_switchboard_value(aggregator: &Aggregator) {
 ```
 
 This implementation allows you to read and utilize Switchboard data feeds within Move. If you have any questions or need further assistance, please contact the Switchboard team.
+
+**DISCLAIMER: ORACLE CODE AND CORE LOGIC ARE AUDITED - THE AUDIT FOR THIS ON-CHAIN ADAPTER IS PENDING**
