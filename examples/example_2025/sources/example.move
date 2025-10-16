@@ -4,7 +4,7 @@
 /// It shows the complete flow from creating a quote verifier to consuming quote data.
 /// This is a simple example only to demonstrate the functionality of the quote consumer.
 
-module example::quote_consumer;
+module example::example_2025;
 
 use sui::clock::Clock;
 use sui::event;
