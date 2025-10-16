@@ -1,12 +1,9 @@
 {
   "name": "@switchboard-xyz/sui-sdk",
-  "version": "0.0.16",
+  "version": "0.1.9",
   "description": "API wrapper for intergating with the Switchboard program on our Sui implementation",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/esm/index.d.ts",
@@ -14,6 +11,9 @@
       "require": "./dist/cjs/index.js"
     }
   },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "files": [
     "dist",
     "src",
@@ -21,20 +21,24 @@
     "package-lock.json"
   ],
   "scripts": {
-    "build": "pnpm exec shx rm -rf dist || true; pnpm exec tsc && pnpm exec tsc -p tsconfig.cjs.json",
+    "prebuild": "pnpm lint",
+    "build": "pnpm exec shx rm -rf dist || true; pnpm exec tsc && pnpm exec tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "check-types": "tsc --noEmit",
+    "docgen": "typedoc --out ./docs/ ./src",
+    "docgen:deploy": "pnpm docgen && firebase deploy --project switchboard-docs --only hosting:switchboard-sui-sdk",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "prepack": "pnpm build",
     "test": "pnpm exec jest --passWithNoTests"
   },
   "dependencies": {
-    "@brokerloop/ttlcache": "^3.2.3",
-    "@coral-xyz/anchor": "0.30.1",
-    "@mysten/sui": "^1.14.1",
-    "@switchboard-xyz/common": "^2.5.11",
-    "@switchboard-xyz/on-demand": "^1.2.56",
-    "bn.js": "^5.2.1"
+    "@isaacs/ttlcache": "^1.4.1",
+    "@mysten/sui": "^1",
+    "@switchboard-xyz/common": "^4.1.10"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint-plugin-simple-import-sort": "^12.1.1"
+  },
   "engines": {
     "node": ">=12.0.0"
   }

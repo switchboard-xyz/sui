@@ -25,6 +25,7 @@ fun actuate(
     event::emit(guardian_queue_id_set_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     _: &AdminCap,
     state: &mut State,

@@ -27,6 +27,7 @@ fun actuate(aggregator: Aggregator) {
     event::emit(update_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     aggregator: Aggregator,
     ctx: &mut TxContext

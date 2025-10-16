@@ -78,6 +78,7 @@ fun actuate(
 }
 
 // initialize aggregator for user
+#[allow(lint(public_entry))]
 public entry fun run(
     queue: &Queue,
     authority: address,

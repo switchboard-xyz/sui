@@ -31,10 +31,11 @@ fun actuate<T>(
     queue.remove_fee_type<T>();
     event::emit(QueueFeeTypeRemoved {
         queue_id: queue.id(),
-        fee_type: type_name::get<Coin<T>>(),
+        fee_type: type_name::with_defining_ids<Coin<T>>(),
     });
 }
 
+#[allow(lint(public_entry))]
 public entry fun run<T>(
     queue: &mut Queue,
     ctx: &mut TxContext

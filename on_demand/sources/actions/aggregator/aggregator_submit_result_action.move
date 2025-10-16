@@ -130,6 +130,7 @@ fun actuate<T>(
 }
 
 // initialize aggregator for user
+#[allow(lint(public_entry))]
 public entry fun run<T>(
     aggregator: &mut Aggregator,
     queue: &Queue,

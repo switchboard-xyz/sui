@@ -64,6 +64,7 @@ fun actuate(
 }
 
 // initialize aggregator for user
+#[allow(lint(public_entry))]
 public entry fun run(
     queue: &mut Queue,
     name: String,

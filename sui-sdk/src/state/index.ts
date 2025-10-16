@@ -1,7 +1,11 @@
-import type { SwitchboardClient } from "../index.js";
-import { getFieldsFromObject, ObjectParsingHelper } from "../index.js";
+import type { SwitchboardClient } from '../index.js';
+import {
+  getFieldsFromObject,
+  MoveObjectFields,
+  ObjectParsingHelper,
+} from '../index.js';
 
-import type { SuiClient } from "@mysten/sui/client";
+import type { SuiClient } from '@mysten/sui/client';
 
 export interface StateData {
   id: string;
@@ -11,7 +15,10 @@ export interface StateData {
 }
 
 export class State {
-  constructor(readonly client: SwitchboardClient, readonly address: string) {}
+  constructor(
+    readonly client: SwitchboardClient,
+    readonly address: string
+  ) {}
 
   /**
    * Get the state data object
@@ -31,7 +38,7 @@ export class State {
     return State.parseStateData(receivedData);
   }
 
-  public static parseStateData(receivedData: any): StateData {
+  public static parseStateData(receivedData: MoveObjectFields): StateData {
     // build from the result
     return {
       guardianQueue: ObjectParsingHelper.asString(receivedData.guardian_queue),

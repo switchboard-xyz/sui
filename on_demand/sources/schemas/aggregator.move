@@ -59,7 +59,7 @@ public struct Aggregator has key {
     max_staleness_seconds: u64,
 
     // The maximum variance between jobs required for a result to be computed
-    max_variance: u64,
+    max_variance: u64,  
 
     // Minimum number of job successes required to compute a valid update
     min_responses: u32,
@@ -313,7 +313,7 @@ fun set_update(
             return
         };
     };
-
+    
     // add the result at the current index
     if (results.length() < MAX_RESULTS) {
         results.push_back(Update {
@@ -321,7 +321,7 @@ fun set_update(
             timestamp_ms,
             oracle,
         });
-    }
+    } 
     // else update the existing result
     else {
         let existing_result = results.borrow_mut(curr_idx);
@@ -392,11 +392,11 @@ fun compute_current_result(aggregator: &Aggregator, now_ms: u64): Option<Current
         max_timestamp_ms = u64::max(max_timestamp_ms, update.timestamp_ms);
     });
 
-    let variance = m2 / ((count - 1) as u256);
+    let variance = m2 / ((count - 1) as u256); 
     let stdev = sqrt(variance);
     let range = max_result.sub(&min_result);
     let (result, timestamp_ms) = update_state.median_result(&mut update_indices);
-
+    
     // update the current result
     option::some(CurrentResult {
         min_timestamp_ms,
@@ -468,6 +468,7 @@ public fun sqrt(x: u256): u128 {
     }
 }
 
+#[allow(dead_code)]
 fun add_i256(a: u256, a_neg: bool, b: u256, b_neg: bool): (u256, bool) {
     if (a_neg && b_neg) {
         return (a + b, true)
@@ -488,7 +489,7 @@ fun add_i256(a: u256, a_neg: bool, b: u256, b_neg: bool): (u256, bool) {
     }
 }
 
-
+#[allow(dead_code)]
 fun add_i128(a: u128, a_neg: bool, b: u128, b_neg: bool): (u128, bool) {
     if (a_neg && b_neg) {
         return (a + b, true)
@@ -551,7 +552,7 @@ fun median_result(update_state: &UpdateState, update_indices: &mut vector<u64>):
 }
 
 // Get the indices of valid updates
-// rules:
+// rules: 
 // 1: Only 1 update per oracle
 // 2: Only the most recent update per oracle
 // 3: Only updates that are within the max staleness
@@ -563,7 +564,7 @@ fun valid_update_indices(update_state: &UpdateState, max_staleness_ms: u64, now_
     // loop backwards through the results
     let mut idx =  update_state.curr_idx;
     let mut remaining_max_iterations = u64::min(MAX_RESULTS, results.length());
-
+    
     if (remaining_max_iterations == 0) {
         return valid_updates
     };
@@ -577,7 +578,7 @@ fun valid_update_indices(update_state: &UpdateState, max_staleness_ms: u64, now_
 
         let result = &results[idx];
         let oracle = result.oracle;
-
+        
 
         if (!seen_oracles.contains(&oracle)) {
             seen_oracles.insert(oracle);
@@ -606,7 +607,7 @@ public fun set_current_value(
     max_timestamp_ms: u64,
     min_result: Decimal,
     max_result: Decimal,
-    stdev: Decimal,
+    stdev: Decimal, 
     range: Decimal,
     mean: Decimal,
 ) {
@@ -809,7 +810,7 @@ fun test_aggregator_updates() {
     // add 18 results
     let result1 = decimal::new(100000000000000000, false);
     let result2 = decimal::new(123456789000000000, false);
-    //
+    // 
     let result3 = decimal::new(567891234000000000, false);
     let result4 = decimal::new(789123456000000000, false);
     let result5 = decimal::new(912345678000000000, false);
@@ -828,7 +829,7 @@ fun test_aggregator_updates() {
     let result18 = decimal::new(678912345000000000, false);
 
     clock::set_for_testing(&mut clock, 18000000);
-
+    
     add_result(&mut aggregator, result1, 1000000, oracle1, &clock);
     add_result(&mut aggregator, result2, 2000000, oracle2, &clock);
     add_result(&mut aggregator, result3, 3000000, oracle3, &clock);
@@ -848,8 +849,8 @@ fun test_aggregator_updates() {
     add_result(&mut aggregator, result17, 17000000, oracle17, &clock);
     add_result(&mut aggregator, result18, 18000000, oracle18, &clock);
 
-    //
-
+    // 
+    
     let mut current_result = aggregator.compute_current_result(18000001);
     assert!(current_result.is_some());
     let current_result = current_result.extract();
@@ -865,15 +866,15 @@ fun test_aggregator_updates() {
     assert!(max_timestamp_ms(&current_result) == 18000000);
     assert!(min_result(&current_result) == result13, min_result(&current_result).value() as u64);
     assert!(max_result(&current_result) == result12, max_result(&current_result).value() as u64);
-    if ((stdev(&current_result).value() > expected_stdev - tolerated_precision_err &&
+    if ((stdev(&current_result).value() > expected_stdev - tolerated_precision_err && 
         stdev(&current_result).value() < expected_stdev + tolerated_precision_err) == false) {
         test_utils::print(b"stdev in this (failing) test is:");
         test_utils::print(*stdev(&current_result).value().to_string().as_bytes());
     };
 
     assert!(
-        stdev(&current_result).value() > expected_stdev - tolerated_precision_err &&
-        stdev(&current_result).value() < expected_stdev + tolerated_precision_err,
+        stdev(&current_result).value() > expected_stdev - tolerated_precision_err && 
+        stdev(&current_result).value() < expected_stdev + tolerated_precision_err, 
         0
     );
     assert!(range(&current_result) == decimal::new(expected_range, false), range(&current_result).value() as u64);
@@ -932,7 +933,7 @@ fun test_aggregator_updates_big() {
     // add 18 results
     let result1 = decimal::new(1733365173000000000000000000, false);
     let result2 = decimal::new(1733365173000000000000000000, false);
-    //
+    // 
     let result3 = decimal::new(1733365173000000000000000000, false);
     let result4 = decimal::new(1733365173000000000000000000, false);
     let result5 = decimal::new(1733365173000000000000000000, false);
@@ -951,7 +952,7 @@ fun test_aggregator_updates_big() {
     let result18 = decimal::new(1733365173000000000000000000, false);
 
     clock::set_for_testing(&mut clock, 18000000);
-
+    
     add_result(&mut aggregator, result1, 1000000, oracle1, &clock);
     add_result(&mut aggregator, result2, 2000000, oracle2, &clock);
     add_result(&mut aggregator, result3, 3000000, oracle3, &clock);
@@ -1100,7 +1101,7 @@ fun test_aggregator_updates_single() {
     // add 18 results
     let result1 = decimal::new(68384040000000000000000, false);
     let result2 = decimal::new(68384040000000000000000, false);
-    //
+    // 
     let result3 = decimal::new(68384040000000000000000, false);
     let result4 = decimal::new(68384040000000000000000, false);
     let result5 = decimal::new(68384040000000000000000, false);
@@ -1119,7 +1120,7 @@ fun test_aggregator_updates_single() {
     let result18 = decimal::new(68384040000000000000000, false);
 
     clock::set_for_testing(&mut clock, 18000000);
-
+    
     add_result(&mut aggregator, result1, 1000000, oracle1, &clock);
     add_result(&mut aggregator, result2, 2000000, oracle2, &clock);
     add_result(&mut aggregator, result3, 3000000, oracle3, &clock);
@@ -1151,7 +1152,4 @@ public fun example_queue_id(): ID {
     object::id_from_address(@0x1)
 }
 
-#[test_only]
-public fun share_for_testing(aggregator: Aggregator) {
-    transfer::share_object(aggregator);
-}
+

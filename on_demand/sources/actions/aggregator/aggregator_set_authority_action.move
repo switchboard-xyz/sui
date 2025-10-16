@@ -31,6 +31,7 @@ fun actuate(aggregator: &mut Aggregator, new_authority: address) {
     event::emit(update_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     aggregator: &mut Aggregator,
     new_authority: address,
