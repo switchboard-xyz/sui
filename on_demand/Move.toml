@@ -1,5 +1,5 @@
 [package]
-name = "switchboard"
+name = "Switchboard"
 edition = "2024.beta"
 version = "0.0.2"
 published-at = "0x846e4d912db89d9db299db0cc7f56f281846ce058fb336ba76e39927836da0ac"
