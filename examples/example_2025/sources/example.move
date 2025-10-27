@@ -253,6 +253,8 @@ fun validate_price_deviation(
 
 #[test_only]
 use sui::test_scenario;
+use sui::clock;
+use switchboard::decimal::{Self, Decimal};
 
 #[test]
 fun test_quote_consumer_creation() {
