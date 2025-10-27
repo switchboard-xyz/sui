@@ -1,13 +1,23 @@
 [package]
-name = "Switchboard"
+name = "switchboard"
 edition = "2024.beta"
-version = "0.0.2"
-published-at = "0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6"
+version = "0.0.5"
+published-at = "0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff"
 
-# mainnet
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
- 
+# Upgrade Command:
+# sui client upgrade --upgrade-capability <UpgradeCap>
+
+# New Version:
+# First Publish: 0xdd96e1c8d6d61c4642b9b73eefb1021cc5f93f489b794bca11c81d55fcf43ce2 - has all base objects 
+# Second Publish: 0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6
+# Third Publish: 0xb79f6b9de3c2b713591c2c2ea46d94c91f6a43e2ba5b393b2f82722bcaeb88c5 - has quote object and verifier
+# Fourth Publish: 0xda090cf22bce84b1cdd604d87a9c611bb1c7996d76fcdad81b606792cc6f70cd
+# Fifth Publish: 0x6e30a38b4dce0dc25b563eed49314f6fba65b5ee9b27ed7b0156f4a7d7dff6ce
+# Sixth Publish: 0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff
+# AdminCap: 0xc256f2b0a61af132f705a5a9d345edcc802fecba3213d6002265dfeb576ece90
+# State: 0x2086fdde07a8f4726a3fc72d6ef1021343a781d42de6541ca412cf50b4339ad6
+# UpgradeCap: 0xf7eb4cd9d7d8ff4aa813ecfa4d7d942039458b813fa8d5d0ca2a01d898b19578
+
 [addresses]
 switchboard = "0x0"
 std = "0x1"

@@ -132,6 +132,7 @@ fun actuate(
     };
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     oracle: &mut Oracle,
     queue: &Queue,

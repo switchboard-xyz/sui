@@ -1,5 +1,5 @@
 {
-  "name": "sui-on-demand",
+  "name": "sui-on-demand-example-2025",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -9,7 +9,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@mysten/sui": "^1.11.0",
+    "@mysten/sui": "^1",
     "@switchboard-xyz/sui-sdk": "0.1.9"
   }
 }

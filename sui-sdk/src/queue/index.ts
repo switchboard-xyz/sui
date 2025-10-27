@@ -1,11 +1,10 @@
-import type { CommonOptions, OracleData, SwitchboardClient } from "../index.js";
-import { getFieldsFromObject, ObjectParsingHelper } from "../index.js";
-import { Oracle } from "../oracle/index.js";
+import type { CommonOptions, OracleData, SwitchboardClient } from '../index.js';
+import { getFieldsFromObject, ObjectParsingHelper } from '../index.js';
+import { Oracle } from '../oracle/index.js';
 
-import type { DynamicFieldInfo } from "@mysten/sui/client";
-import type { Transaction } from "@mysten/sui/transactions";
-import { fromHex, toBase58 } from "@mysten/sui/utils";
-import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui/utils";
+import type { DynamicFieldInfo, MoveValue } from '@mysten/sui/client';
+import type { Transaction } from '@mysten/sui/transactions';
+import { fromHex, SUI_CLOCK_OBJECT_ID, toBase58 } from '@mysten/sui/utils';
 
 export interface QueueInitParams extends CommonOptions {
   queueKey: string;
@@ -50,10 +49,7 @@ export interface QueueData {
   }[];
   fee: number;
   feeRecipient: string;
-  feeTypes: {
-    type: string;
-    fields: Record<string, unknown>;
-  }[];
+  feeTypes: string[];
   guardianQueueId: string;
   id: string;
   lastQueueOverrideMs: number;
@@ -64,7 +60,10 @@ export interface QueueData {
 }
 
 export class Queue {
-  constructor(readonly client: SwitchboardClient, readonly address: string) {}
+  constructor(
+    readonly client: SwitchboardClient,
+    readonly address: string
+  ) {}
 
   /**
    * Create a new Queue
@@ -80,7 +79,7 @@ export class Queue {
       tx.moveCall({
         target: `${switchboardAddress}::guardian_queue_init_action::run`,
         arguments: [
-          tx.pure.vector("u8", Array.from(fromHex(options.queueKey))),
+          tx.pure.vector('u8', Array.from(fromHex(options.queueKey))),
           tx.pure.address(options.authority),
           tx.pure.string(options.name),
           tx.pure.u64(options.fee),
@@ -91,12 +90,12 @@ export class Queue {
       });
     } else {
       if (!options.guardianQueueId) {
-        throw new Error("guardianQueueId is required for non-guardian queues");
+        throw new Error('guardianQueueId is required for non-guardian queues');
       }
       tx.moveCall({
         target: `${switchboardAddress}::oracle_queue_init_action::run`,
         arguments: [
-          tx.pure.vector("u8", Array.from(fromHex(options.queueKey))),
+          tx.pure.vector('u8', Array.from(fromHex(options.queueKey))),
           tx.pure.address(options.authority),
           tx.pure.string(options.name),
           tx.pure.u64(options.fee),
@@ -159,8 +158,8 @@ export class Queue {
       arguments: [
         tx.object(this.address),
         tx.object(options.oracle),
-        tx.pure.vector("u8", Array.from(fromHex(options.secp256k1Key))),
-        tx.pure.vector("u8", Array.from(fromHex(options.mrEnclave))),
+        tx.pure.vector('u8', Array.from(fromHex(options.secp256k1Key))),
+        tx.pure.vector('u8', Array.from(fromHex(options.mrEnclave))),
         tx.pure.u64(options.expirationTimeMs),
         tx.object(SUI_CLOCK_OBJECT_ID),
       ],
@@ -208,12 +207,24 @@ export class Queue {
       })
       .then(getFieldsFromObject);
 
-    // Fetch the exisitng oracles
-    const existingOraclesResponse: any = rpcResponseData.existing_oracles;
+    // Fetch the existing oracles
+    const existingOraclesResponse = rpcResponseData.existing_oracles;
     const existingOraclesObjects: DynamicFieldInfo[] = [];
+
+    let parentId: string;
+
+    try {
+      // Try to safely extract the parentId
+      parentId = (existingOraclesResponse as { fields: { id: { id: string } } })
+        .fields.id.id;
+    } catch {
+      // Fallback to the queue address if extraction fails
+      parentId = this.address;
+    }
+
     let existingOraclesDynamicFields =
       await this.client.client.getDynamicFields({
-        parentId: existingOraclesResponse.fields.id.id,
+        parentId,
       });
     existingOraclesObjects.push(...existingOraclesDynamicFields.data);
     while (existingOraclesDynamicFields.hasNextPage) {
@@ -226,7 +237,7 @@ export class Queue {
     // fetch existing oracles objects
     const realExistingOraclesContents =
       await this.client.client.multiGetObjects({
-        ids: existingOraclesObjects.map((o) => {
+        ids: existingOraclesObjects.map(o => {
           return o.objectId;
         }),
         options: {
@@ -235,14 +246,30 @@ export class Queue {
       });
 
     // parse the existing oracles
-    const existingOracles = realExistingOraclesContents.map((o) => {
-      const fields: any = getFieldsFromObject(o);
-      return {
-        oracleId: ObjectParsingHelper.asString(fields.value.fields.oracle_id),
-        oracleKey: toBase58(
-          ObjectParsingHelper.asUint8Array(fields.value.fields.oracle_key)
-        ),
-      };
+    const existingOracles = realExistingOraclesContents.map(o => {
+      try {
+        const fields = getFieldsFromObject(o);
+        // First cast to unknown, then to our specific type to avoid direct type conversion errors
+        const value = fields.value as unknown;
+        const fieldsObject =
+          value && typeof value === 'object' && 'fields' in value
+            ? (value as { fields: Record<string, MoveValue> }).fields
+            : undefined;
+
+        return {
+          oracleId: fieldsObject?.oracle_id
+            ? ObjectParsingHelper.asString(fieldsObject.oracle_id)
+            : '',
+          oracleKey: fieldsObject?.oracle_key
+            ? toBase58(
+                ObjectParsingHelper.asUint8Array(fieldsObject.oracle_key)
+              )
+            : '',
+        };
+      } catch {
+        // Provide fallback values if parsing fails
+        return { oracleId: '', oracleKey: '' };
+      }
     });
 
     // build from the result
@@ -250,7 +277,7 @@ export class Queue {
       // get authority address
       authority: ObjectParsingHelper.asString(rpcResponseData.authority),
 
-      // get existing oracles (TODO)
+      // get existing oracles
       existingOracles: existingOracles,
 
       // get fee number (though encoded as string)
@@ -259,10 +286,24 @@ export class Queue {
       // fee recipient address
       feeRecipient: ObjectParsingHelper.asString(rpcResponseData.fee_recipient),
 
-      // accepted fee coin types
-      feeTypes: ObjectParsingHelper.asArray(rpcResponseData.fee_types).map(
-        (ft: any) => ft.fields.name
-      ),
+      // accepted fee coin types - use a safe extraction approach
+      feeTypes: ObjectParsingHelper.asArray(rpcResponseData.fee_types)
+        .map(ft => {
+          try {
+            // Use a safer approach to access nested fields
+            if (typeof ft === 'object' && ft !== null && 'fields' in ft) {
+              const fields = (ft as { fields: Record<string, MoveValue> })
+                .fields;
+              return fields.name
+                ? ObjectParsingHelper.asString(fields.name)
+                : '';
+            }
+            return '';
+          } catch {
+            return '';
+          }
+        })
+        .filter(Boolean), // Remove empty strings
 
       // guardian queue id
       guardianQueueId: ObjectParsingHelper.asString(
@@ -304,7 +345,7 @@ export class Queue {
    */
   async loadOracleData(): Promise<OracleData[]> {
     const queueData = await this.loadData();
-    const oracleIds = queueData.existingOracles.map((o) => o.oracleId);
+    const oracleIds = queueData.existingOracles.map(o => o.oracleId);
     return Oracle.loadMany(this.client, oracleIds);
   }
 }

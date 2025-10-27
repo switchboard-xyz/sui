@@ -37,6 +37,7 @@ fun actuate(
     event::emit(update_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     queue: &mut Queue,
     new_authority: address,

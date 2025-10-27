@@ -92,7 +92,7 @@ public fun has_authority(queue: &Queue, ctx: &TxContext): bool {
 }
 
 public fun has_fee_type<T>(queue: &Queue): bool {
-    queue.fee_types.contains(&type_name::get<Coin<T>>())
+    queue.fee_types.contains(&type_name::with_defining_ids<Coin<T>>())
 }
 
 public fun oracle_id(oracle: &ExistingOracle): ID {
@@ -131,7 +131,7 @@ public(package) fun new(
             last_queue_override_ms: 0,
             guardian_queue_id,
             existing_oracles: table::new(ctx),
-            fee_types: vector::singleton(type_name::get<Coin<SUI>>()),
+            fee_types: vector::singleton(type_name::with_defining_ids<Coin<SUI>>()),
             version: VERSION,
         };
         transfer::share_object(guardian_queue);
@@ -148,7 +148,7 @@ public(package) fun new(
             last_queue_override_ms: 0,
             guardian_queue_id,
             existing_oracles: table::new(ctx),
-            fee_types: vector::singleton(type_name::get<Coin<SUI>>()),
+            fee_types: vector::singleton(type_name::with_defining_ids<Coin<SUI>>()),
             version: VERSION,
         };
         transfer::share_object(oracle_queue);
@@ -193,14 +193,14 @@ public(package) fun set_configs(
 }
 
 public (package) fun add_fee_type<T>(queue: &mut Queue) {
-    if (queue.fee_types.contains(&type_name::get<Coin<T>>())) {
+    if (queue.fee_types.contains(&type_name::with_defining_ids<Coin<T>>())) {
         return
     };
-    queue.fee_types.push_back(type_name::get<Coin<T>>());
+    queue.fee_types.push_back(type_name::with_defining_ids<Coin<T>>());
 }
 
 public (package) fun remove_fee_type<T>(queue: &mut Queue) {
-    let (has_type, index) = queue.fee_types.index_of(&type_name::get<Coin<T>>());
+    let (has_type, index) = queue.fee_types.index_of(&type_name::with_defining_ids<Coin<T>>());
     if (has_type == false) {
         return
     };

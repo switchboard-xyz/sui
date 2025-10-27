@@ -47,6 +47,7 @@ fun actuate(
     event::emit(created_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     oracle_key: vector<u8>,
     queue: &mut Queue,

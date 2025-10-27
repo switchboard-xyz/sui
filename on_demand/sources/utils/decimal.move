@@ -143,6 +143,7 @@ fun sub_internal(a: &Decimal, b: &Decimal): Decimal {
     }
 }
 
+#[allow(dead_code)]
 public fun scale_to_decimals(num: &Decimal, current_decimals: u8): u128 {
     if (current_decimals < DECIMALS) {
         return (num.value * pow_10(DECIMALS - current_decimals))

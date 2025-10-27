@@ -468,6 +468,7 @@ public fun sqrt(x: u256): u128 {
     }
 }
 
+#[allow(dead_code)]
 fun add_i256(a: u256, a_neg: bool, b: u256, b_neg: bool): (u256, bool) {
     if (a_neg && b_neg) {
         return (a + b, true)
@@ -488,7 +489,7 @@ fun add_i256(a: u256, a_neg: bool, b: u256, b_neg: bool): (u256, bool) {
     }
 }
 
-
+#[allow(dead_code)]
 fun add_i128(a: u128, a_neg: bool, b: u128, b_neg: bool): (u128, bool) {
     if (a_neg && b_neg) {
         return (a + b, true)

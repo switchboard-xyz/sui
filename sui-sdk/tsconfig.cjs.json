@@ -3,8 +3,13 @@
   "compilerOptions": {
     "module": "CommonJS",
     "outDir": "./dist/cjs",
+    "rootDir": "./src",
     "declarationDir": "./dist/types/cjs",
     "moduleResolution": "node",
-    "allowJs": true
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": false
   }
 }

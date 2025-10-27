@@ -26,6 +26,7 @@ fun actuate(
     event::emit(on_demand_package_id_set_event);
 }
 
+#[allow(lint(public_entry))]
 public entry fun run(
     _: &AdminCap,
     state: &mut State,

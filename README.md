@@ -21,16 +21,30 @@
   </h4>
 </div>
 
-# Switchboard On-Demand on Sui
+  <h1>Switchboard On-Demand on Sui</h1>
 
-**DISCLAIMER: ORACLE CODE AND CORE LOGIC ARE AUDITED - THE AUDIT FOR THIS ON-CHAIN ADAPTER IS PENDING**
+  <p>Switchboard is a multi-chain, permissionless oracle protocol allowing developers to fully control how data is relayed on-chain to their smart contracts.</p>
+
+  <div>
+    <a href="https://discord.gg/switchboardxyz">
+      <img alt="Discord" src="https://img.shields.io/discord/841525135311634443?color=blueviolet&logo=discord&logoColor=white" />
+    </a>
+    <a href="https://twitter.com/switchboardxyz">
+      <img alt="Twitter" src="https://img.shields.io/twitter/follow/switchboardxyz?label=Follow+Switchboard" />
+    </a>
+  </div>
+
+  <h4>
+    <strong>Documentation: </strong><a href="https://docs.switchboard.xyz">docs.switchboard.xyz</a>
+  </h4>
+</div>
 
 ## Active Deployments
 
 The Switchboard On-Demand service is currently deployed on the following networks:
 
-- Mainnet: [0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655](https://suiscan.xyz/mainnet/object/0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655)
-- Testnet: [0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6](https://suiscan.xyz/testnet/object/0x578b91ec9dcc505439b2f0ec761c23ad2c533a1c23b0467f6c4ae3d9686709f6)
+- Mainnet: [0x846e4d912db89d9db299db0cc7f56f281846ce058fb336ba76e39927836da0ac](https://suiscan.xyz/mainnet/object/0x846e4d912db89d9db299db0cc7f56f281846ce058fb336ba76e39927836da0ac)
+- Testnet: [0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff](https://suiscan.xyz/testnet/object/0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff)
 
 ## Typescript-SDK Installation
 
@@ -143,7 +157,7 @@ console.log(res);
 
 ## Updating Feeds
 
-With Switchboard On-Demand, passing the PTB (proof-to-be) into the feed update method handles the update automatically.
+With Switchboard On-Demand, passing the PTB into the feed update method handles the update automatically.
 
 ```typescript
 const aggregator = new Aggregator(sb, aggregatorId);
@@ -226,3 +240,126 @@ public entry fun use_switchboard_value(aggregator: &Aggregator) {
 ```
 
 This implementation allows you to read and utilize Switchboard data feeds within Move. If you have any questions or need further assistance, please contact the Switchboard team.
+
+## Oracle Quote Integration (New - October 2025 Switchboard Upgrade)
+
+The quote flow provides a more flexible way to consume oracle data by allowing you to create a quote verifier in your program and then fetch quotes on-demand. This approach gives you more control over when and how oracle data is consumed.
+
+### Overview
+
+Quotes work in two main steps:
+
+1. **Create a Quote Verifier**: Set up a verifier in your Move program that can validate oracle quotes
+2. **Fetch Quotes**: Use the SDK to fetch oracle consensus data and create quotes that can be used in subsequent transactions
+
+Alternatively you can:
+1. **Manually verify and sequence updates**: You can manually check 
+
+### Step 1: Creating a Quote Verifier
+
+First, create a quote verifier in your Move program:
+
+```typescript
+import { Quote, SwitchboardClient } from "@switchboard-xyz/sui-sdk";
+import { Transaction } from "@mysten/sui/transactions";
+
+const client = new SwitchboardClient(suiClient);
+const tx = new Transaction();
+
+// Create a new quote verifier
+const verifier = await Quote.createVerifierTx(client, tx, {
+  queue: queueId, // The oracle queue ID
+});
+
+// Execute the transaction to create the verifier
+const result = await suiClient.signAndExecuteTransaction({
+  transaction: tx,
+  signer: keypair,
+});
+```
+
+### Step 2: Fetching Quotes
+
+Once you have a verifier, you can fetch quotes using the SDK:
+
+```typescript
+import { fetchQuoteUpdate } from "@switchboard-xyz/sui-sdk";
+
+const tx = new Transaction();
+
+// Fetch quote updates for specific feed hashes
+const quotes = await fetchQuoteUpdate(
+  client,
+  ['0x7418dc6408f5e0eb4724dabd81922ee7b0814a43abc2b30ea7a08222cd1e23ee'], // Feed ID's 
+  tx
+);
+
+// The quotes object can now be used in subsequent move calls
+tx.moveCall({
+  target: 'YOUR_PACKAGE::your_module::use_quotes',
+  arguments: [
+    quotes, // The quotes object from fetchQuoteUpdate
+    // ... other arguments
+  ],
+});
+
+// Execute the transaction
+const result = await suiClient.signAndExecuteTransaction({
+  transaction: tx,
+  signer: keypair,
+});
+```
+
+### Move Integration for Quotes
+
+In your Move code, you can work with quotes using the quote verifier.
+
+```move
+module example::quote_consumer;
+
+use switchboard::quote::{Self, QuoteVerifier, Quotes};
+use switchboard::decimal::Decimal;
+
+public struct State has key {
+    id: UID,
+    quote_verifier: QuoteVerifier,
+}
+
+// Initialize your program with a quote verifier
+public fun init_with_verifier(ctx: &mut TxContext, queue: ID) {
+    let verifier = switchboard::quote::new_verifier(ctx, queue);
+    
+    transfer::share_object(State {
+        id: object::new(ctx),
+        quote_verifier: verifier,
+    });
+}
+
+// Use quotes in your program logic
+public entry fun consume_quotes(
+    program: &mut State,
+    quotes: Quotes,
+    ctx: &mut TxContext
+) {
+    // Verify and extract quote data
+    let quote_data = program.quote_verifier.verify_quotes(&quotes);
+    
+    // Access individual quotes by feed hash
+    let feed_hash = b"7418dc6408f5e0eb4724dabd81922ee7b0814a43abc2b30ea7a08222cd1e23ee";
+    if (quote_data.contains(feed_hash)) {
+        let quote = quote_data.get(feed_hash);
+        let result: Decimal = quote.result();
+        let value_u128 = result.value();
+        let timestamp: u64 = quote.timestamp_ms();
+        
+        // Use the quote data in your program logic...
+    };
+}
+```
+
+
+# Surge 
+
+*coming soon*
+
+**DISCLAIMER: ORACLE CODE AND CORE LOGIC ARE AUDITED - THE AUDIT FOR THIS ON-CHAIN ADAPTER IS PENDING**
