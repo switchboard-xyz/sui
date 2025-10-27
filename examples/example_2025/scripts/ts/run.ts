@@ -49,7 +49,7 @@ console.log(`User account ${userAddress} loaded.`);
 
 // Update these with your deployed contract address and queue ID
 const exampleAddress =
-  "0x73878169b1f35e04e65c5002557a48c7c6ea5e5618fb0c12ffbc485c25023755";
+  "0xed9da5e073dc032c6135c95fae89bdcfb2f6e9c6590c2e947926ce887d154480";
 const queueId = state?.oracleQueueId;
 if (!queueId) {
   throw new Error("Queue ID not found");
@@ -86,10 +86,7 @@ console.log("Quote Consumer Example response:", res);
 // Get the quote consumer id
 let quoteConsumerId: string | null = null;
 for (const change of res.objectChanges ?? []) {
-  if (
-    change.type === "created" &&
-    change.objectType === `${exampleAddress}::example_2025::QuoteConsumer`
-  ) {
+  if (change.type === "created" && change.objectType?.includes("::example_2025::QuoteConsumer")) {
     quoteConsumerId = change.objectId;
     console.log("Quote Consumer ID:", quoteConsumerId);
   }

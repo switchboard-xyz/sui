@@ -2,6 +2,7 @@
 name = "example"
 edition = "2024.beta"
 version = "0.0.1"
+published-at = "0x9c78cd79b40d22b9dbb2198975523b20696ba2ada2fecbb1db94fb2616c48b88"
 
 [dependencies.Switchboard]
 git = "https://github.com/switchboard-xyz/sui.git"
