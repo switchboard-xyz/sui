@@ -2,7 +2,7 @@
 name = "switchboard"
 edition = "2024.beta"
 version = "0.0.5"
-published-at = "0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff"
+published-at = "0x0ea79f9c3fa1e3f701885a00bf26f92a297223165f26529767d2f7d1e3c4ac1e"
 
 # Upgrade Command:
 # sui client upgrade --upgrade-capability <UpgradeCap>
@@ -14,6 +14,8 @@ published-at = "0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658c
 # Fourth Publish: 0xda090cf22bce84b1cdd604d87a9c611bb1c7996d76fcdad81b606792cc6f70cd
 # Fifth Publish: 0x6e30a38b4dce0dc25b563eed49314f6fba65b5ee9b27ed7b0156f4a7d7dff6ce
 # Sixth Publish: 0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff
+# Seventh Publish: 0x80880d6f840c8dfed71da03ed625a71b8bbf95d82108526a906c637883aba54a
+# Eigth Publish: 0x0ea79f9c3fa1e3f701885a00bf26f92a297223165f26529767d2f7d1e3c4ac1e
 # AdminCap: 0xc256f2b0a61af132f705a5a9d345edcc802fecba3213d6002265dfeb576ece90
 # State: 0x2086fdde07a8f4726a3fc72d6ef1021343a781d42de6541ca412cf50b4339ad6
 # UpgradeCap: 0xf7eb4cd9d7d8ff4aa813ecfa4d7d942039458b813fa8d5d0ca2a01d898b19578

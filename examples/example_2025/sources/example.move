@@ -8,7 +8,7 @@ module example::example_2025;
 
 use sui::clock::Clock;
 use sui::event;
-use switchboard::quote::{QuoteVerifier, Quotes};
+use switchboard::quote::{Self, QuoteVerifier, Quotes};
 use switchboard::decimal::Decimal;
 
 // ========== Error Codes ==========
@@ -254,7 +254,7 @@ fun validate_price_deviation(
 #[test_only]
 use sui::test_scenario;
 use sui::clock;
-use switchboard::decimal::{Self, Decimal};
+use switchboard::decimal;
 
 #[test]
 fun test_quote_consumer_creation() {
@@ -270,7 +270,8 @@ fun test_quote_consumer_creation() {
     assert!(consumer.max_deviation_bps == 1000, 3);
     
     // Clean up
-    let QuoteConsumer { id, quote_verifier: _, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    let QuoteConsumer { id, quote_verifier, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    quote::delete_verifier(quote_verifier);
     object::delete(id);
     test_scenario::end(scenario);
 }
@@ -289,7 +290,7 @@ fun test_collateral_ratio_calculation() {
     consumer.last_update_time = 1000;
     
     // Create a mock clock
-    let clock = clock::create_for_testing(ctx);
+    let mut clock = clock::create_for_testing(ctx);
     clock::set_for_testing(&mut clock, 2000); // 1 second later
     
     // Test collateral ratio calculation
@@ -300,7 +301,8 @@ fun test_collateral_ratio_calculation() {
     
     // Clean up
     clock::destroy_for_testing(clock);
-    let QuoteConsumer { id, quote_verifier: _, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    let QuoteConsumer { id, quote_verifier, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    quote::delete_verifier(quote_verifier);
     object::delete(id);
     test_scenario::end(scenario);
 }

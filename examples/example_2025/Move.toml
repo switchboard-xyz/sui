@@ -6,7 +6,7 @@ version = "0.0.1"
 [dependencies.Switchboard]
 git = "https://github.com/switchboard-xyz/sui.git"
 subdir = "on_demand"
-rev = "main"
+rev = "testnet"
 
 [addresses]
 example = "0x0"

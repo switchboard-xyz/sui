@@ -2,13 +2,14 @@
 
 [move]
 version = 3
-manifest_digest = "4A0B3AE698496E868E6AD7F342A95B0FAB54B3772A9D25A92272ADDEB6CE41C6"
-deps_digest = "F9B494B64F0615AED0E98FC12A85B85ECD2BC5185C22D30E7F67786BB52E507C"
+manifest_digest = "4CCE0F11931096D08C040BEC4440E8F13889822A35236678AD7223DACC469B44"
+deps_digest = "397E6A9F7A624706DBDFEE056CE88391A15876868FD18A88504DA74EB458D697"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
+  { id = "Switchboard", name = "Switchboard" },
 ]
 
 [[move.package]]
@@ -42,6 +43,17 @@ dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
+[[move.package]]
+id = "Switchboard"
+source = { git = "https://github.com/switchboard-xyz/sui.git", rev = "testnet", subdir = "on_demand" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
 [move.toolchain-version]
 compiler-version = "1.58.1"
 edition = "2024.beta"
@@ -51,12 +63,6 @@ flavor = "sui"
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0xdd96e1c8d6d61c4642b9b73eefb1021cc5f93f489b794bca11c81d55fcf43ce2"
-latest-published-id = "0x0ea79f9c3fa1e3f701885a00bf26f92a297223165f26529767d2f7d1e3c4ac1e"
-published-version = "8"
-
-[env.mainnet]
-chain-id = "35834a8a"
-original-published-id = "0x0000000000000000000000000000000000000000000000000000000000000000"
-latest-published-id = "0xe6717fb7c9d44706bf8ce8a651e25c0a7902d32cb0ff40c0976251ce8ac25655"
-published-version = "2"
+original-published-id = "0x73878169b1f35e04e65c5002557a48c7c6ea5e5618fb0c12ffbc485c25023755"
+latest-published-id = "0x73878169b1f35e04e65c5002557a48c7c6ea5e5618fb0c12ffbc485c25023755"
+published-version = "1"
