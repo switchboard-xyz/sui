@@ -9,7 +9,7 @@ module example::example_2025;
 use sui::clock::Clock;
 use sui::event;
 use switchboard::quote::{QuoteVerifier, Quotes};
-use switchboard::decimal::{Self, Decimal};
+use switchboard::decimal::Decimal;
 
 // ========== Error Codes ==========
 
@@ -86,7 +86,6 @@ public fun update_price(
     quotes: Quotes,
     feed_hash: vector<u8>,
     clock: &Clock,
-    ctx: &mut TxContext
 ) {
     // Verify quotes using the quote verifier
    consumer.quote_verifier.verify_quotes(&quotes, clock);
@@ -151,12 +150,11 @@ public fun is_price_fresh(consumer: &QuoteConsumer, clock: &Clock): bool {
 }
 
 /// Advanced: Update multiple prices in a single transaction
-public entry fun update_multiple_prices(
+public fun update_multiple_prices(
     consumer: &mut QuoteConsumer,
     quotes: Quotes,
     feed_hashes: vector<vector<u8>>,
     clock: &Clock,
-    ctx: &mut TxContext
 ) {
     consumer.quote_verifier.verify_quotes(&quotes, clock);
     let mut i = 0;
