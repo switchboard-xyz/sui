@@ -147,28 +147,18 @@ public fun verify_quotes(
         if (quote.timestamp_ms > clock.timestamp_ms()) {
             continue
         };
-        let existing_quote = get_quote(verifier, quote.feed_id);
+        
+        // Check if quote exists first
+        if (!verifier.quotes.contains(quote.feed_id)) {
+            // First time seeing this feed - just add it
+            table::add(&mut verifier.quotes, quote.feed_id, *quote);
+        } else {
+            // Quote exists - check if we should update it
+            let existing_quote = get_quote(verifier, quote.feed_id);
 
-        // If the quote is newer than the existing quote, update the quote
-        if (quote.timestamp_ms > existing_quote.timestamp_ms) {
-
-            // If the quote is not in the verifier, add it
-            if (!verifier.quotes.contains(quote.feed_id)) {
-                table::add(&mut verifier.quotes, quote.feed_id, *quote);
-            } 
-            // If the quote is in the verifier, update it
-            else {
-                let existing_quote = table::borrow_mut(&mut verifier.quotes, quote.feed_id);
-                *existing_quote = *quote;
-            };
-        // If the quote is marked as the same timestamp, but has a newer slot, update or add the quote
-        } else if (quote.timestamp_ms == existing_quote.timestamp_ms && quote.slot > existing_quote.slot) {
-            // If the quote is not in the verifier, add it
-            if (!verifier.quotes.contains(quote.feed_id)) {
-                table::add(&mut verifier.quotes, quote.feed_id, *quote);
-            } 
-            // If the quote is in the verifier, update it
-            else {
+            // If the quote is newer than the existing quote, or has same timestamp but newer slot, update it
+            if (quote.timestamp_ms > existing_quote.timestamp_ms || 
+                (quote.timestamp_ms == existing_quote.timestamp_ms && quote.slot > existing_quote.slot)) {
                 let existing_quote = table::borrow_mut(&mut verifier.quotes, quote.feed_id);
                 *existing_quote = *quote;
             };
