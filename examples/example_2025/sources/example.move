@@ -1,28 +1,70 @@
-/// Quote Consumer Example
+/// # Switchboard Oracle Quote Consumer Example
 /// 
-/// This Move module demonstrates how to integrate Switchboard quotes into your program.
-/// It shows the complete flow from creating a quote verifier to consuming quote data.
-/// This is a simple example only to demonstrate the functionality of the quote consumer.
+/// This module demonstrates how to securely integrate Switchboard's on-demand oracle data
+/// into your Sui Move contracts using the Quote Verifier pattern.
+/// 
+/// ## What is the Quote Verifier?
+/// 
+/// The Quote Verifier is a security-critical component that:
+/// - Ensures price data is recent and not stale (and can't be gamed by submitting old data)
+/// - Manages quote history and prevents replay attacks
+/// - Enables custom validation logic (price deviation limits, staleness checks, etc.)
+/// 
+/// ## Why Use It?
+/// 
+/// It checks the queue id, which is a unique identifier for the oracle queue that the oracles are on. 
+/// Anybody can make one, so it's essential that this isn't tampered with.
+/// It just handles timestamp and slot checks for you so that stale data can't be used. 
+/// This protects your DeFi protocol from simple price manipulation attacks, but you can easily do this yourself by keeping track of that data.
+/// 
+/// ## How It Works
+/// 
+/// 1. **Create a QuoteConsumer**: Initialize with a Quote Verifier tied to an oracle queue 
+/// 2. **Fetch Oracle Data**: Use the SDK to get signed price data from multiple oracles
+/// 3. **Verify & Validate**: The verifier checks signatures, freshness, and custom rules
+/// 4. **Use Verified Data**: Access the validated price for your business logic
+/// 
+/// ## Example Use Cases
+/// 
+/// - Lending protocols: Get collateral prices for liquidation checks
+/// - DEXs: Price oracles for trading pairs  
+/// - Options protocols: Spot prices for settlement
+/// - Prediction markets: Real-world event outcomes
 
 module example::example_2025;
 
 use sui::clock::Clock;
 use sui::event;
 use switchboard::quote::{QuoteVerifier, Quotes};
-use switchboard::decimal::{Self, Decimal};
+use switchboard::decimal::Decimal;
 
 // ========== Error Codes ==========
 
+/// Error when quote data is invalid or not found
 #[error]
 const EInvalidQuote: vector<u8> = b"Invalid quote data";
+
+/// Error when quote data is too old (stale)
 #[error]
 const EQuoteExpired: vector<u8> = b"Quote data is expired";
+
+/// Error when price change exceeds configured deviation threshold
 #[error]
 const EPriceDeviationTooHigh: vector<u8> = b"Price deviation exceeds threshold";
 
 // ========== Structs ==========
 
-/// Main program that uses Switchboard quotes
+/// QuoteConsumer - Your Oracle Data Consumer
+/// 
+/// This struct manages oracle price data with built-in security features:
+/// - `quote_verifier`: Verifies oracle signatures and manages quote storage
+/// - `last_price`: The most recent verified price
+/// - `last_update_time`: Timestamp of the last update (for freshness checks)
+/// - `max_age_ms`: Maximum age for valid quotes (custom staleness threshold)
+/// - `max_deviation_bps`: Maximum price deviation allowed (prevents manipulation)
+/// 
+/// The QuoteConsumer is a shared object, meaning anyone can read it, but only
+/// your contract logic controls when prices are updated.
 public struct QuoteConsumer has key {
     id: UID,
     quote_verifier: QuoteVerifier,
@@ -50,7 +92,26 @@ public struct QuoteValidationFailed has copy, drop {
 
 // ========== Public Functions ==========
 
-/// Initialize the quote consumer with a quote verifier
+/// Initialize a QuoteConsumer with a Quote Verifier
+/// 
+/// # Arguments
+/// * `queue` - The Switchboard oracle queue ID to use for verification
+/// * `max_age_ms` - Maximum age for valid quotes in milliseconds (e.g., 300000 = 5 minutes)
+/// * `max_deviation_bps` - Maximum price deviation in basis points (e.g., 1000 = 10%)
+/// * `ctx` - Transaction context
+/// 
+/// # Returns
+/// A new QuoteConsumer instance with an embedded Quote Verifier
+/// 
+/// # Example
+/// ```
+/// let consumer = init_quote_consumer(
+///     queue_id,
+///     300_000,  // 5 minute max age
+///     1000,     // 10% max deviation
+///     ctx
+/// );
+/// ```
 public fun init_quote_consumer(
     queue: ID,
     max_age_ms: u64,
@@ -69,7 +130,16 @@ public fun init_quote_consumer(
     }
 }
 
-/// Create and share a quote consumer
+/// Create and share a QuoteConsumer
+/// 
+/// This is the recommended entry point. It creates a QuoteConsumer and makes it
+/// a shared object so anyone can read it (but only your contract logic can update it).
+/// 
+/// # Arguments  
+/// * `queue` - The Switchboard oracle queue ID
+/// * `max_age_ms` - Maximum quote age in milliseconds
+/// * `max_deviation_bps` - Maximum price deviation in basis points
+/// * `ctx` - Transaction context
 public fun create_quote_consumer(
     queue: ID,
     max_age_ms: u64,
@@ -80,30 +150,61 @@ public fun create_quote_consumer(
     transfer::share_object(consumer);
 }
 
-/// Update price using Switchboard quotes
+/// Update price using Switchboard oracle quotes
+/// 
+/// This is the core function that demonstrates the Quote Verifier in action.
+/// It performs multiple security checks before accepting new price data:
+/// 
+/// 1. **Signature Verification**: Ensures data comes from authorized oracles
+/// 2. **Freshness Check**: Rejects data older than 10 seconds
+/// 3. **Deviation Check**: Prevents sudden price jumps (configurable threshold)
+/// 4. **Quote Storage**: Only updates if newer data arrives
+/// 
+/// # Arguments
+/// * `consumer` - The QuoteConsumer to update
+/// * `quotes` - Signed oracle data from Switchboard (fetched via SDK)
+/// * `feed_hash` - The feed identifier (e.g., BTC/USD feed hash)
+/// * `clock` - Sui's clock object for timestamp validation
+/// 
+/// # Security Guarantees
+/// - Oracle signatures are cryptographically verified
+/// - Only fresh data (< 10 seconds old) is accepted
+/// - Price manipulation attempts are detected and rejected
+/// - All updates are logged via events
+/// 
+/// # Example
+/// ```
+/// // Fetch signed data from oracles (done off-chain via SDK)
+/// let quotes = fetch_oracle_data(feed_hash);
+/// 
+/// // Verify and update (done on-chain)
+/// update_price(&mut consumer, quotes, feed_hash, &clock);
+/// ```
 public fun update_price(
     consumer: &mut QuoteConsumer,
     quotes: Quotes,
     feed_hash: vector<u8>,
     clock: &Clock,
-    ctx: &mut TxContext
 ) {
-    // Verify quotes using the quote verifier
+    // STEP 1: Verify that oracles are on the right queue + write the new slotnum & timestamp to the quote verifier
+    // This ensures the data comes from legitimate Switchboard oracles
    consumer.quote_verifier.verify_quotes(&quotes, clock);
     
-    // Check if the feed hash exists in the quotes
+    // STEP 2: Check if the feed exists in the verified quotes
     assert!(consumer.quote_verifier.quote_exists(*& feed_hash), EInvalidQuote);
 
-    // Get the specific quote
+    // STEP 3: Get the verified quote
     let quote = consumer.quote_verifier.get_quote(*& feed_hash);
 
-    // Ensure the timestamp is a maximum of 10 seconds old
+    // STEP 4: Ensure the quote is fresh (within 10 seconds)
+    // This prevents using stale oracle data
     assert!(quote.timestamp_ms() + 10000 > clock.timestamp_ms(), EQuoteExpired);
     
-    // Get the price from the quote
+    // STEP 5: Extract the price value
     let new_price = quote.result();
     
-    // Validate price deviation if we have a previous price
+    // STEP 6: Validate price deviation (if we have a previous price)
+    // This prevents accepting manipulated data with sudden price jumps
     if (consumer.last_price.is_some()) {
         let last_price = *consumer.last_price.borrow();
         validate_price_deviation(&last_price, &new_price, consumer.max_deviation_bps);
@@ -116,11 +217,11 @@ public fun update_price(
         option::none()
     };
     
-    // Update the stored price and timestamp
+    // STEP 7: Update the stored price and timestamp
     consumer.last_price = option::some(new_price);
     consumer.last_update_time = quote.timestamp_ms();
     
-    // Emit price update event
+    // STEP 8: Emit event for transparency
     event::emit(PriceUpdated {
         feed_hash,
         old_price: old_price_value,
@@ -151,12 +252,11 @@ public fun is_price_fresh(consumer: &QuoteConsumer, clock: &Clock): bool {
 }
 
 /// Advanced: Update multiple prices in a single transaction
-public entry fun update_multiple_prices(
+public fun update_multiple_prices(
     consumer: &mut QuoteConsumer,
     quotes: Quotes,
     feed_hashes: vector<vector<u8>>,
     clock: &Clock,
-    ctx: &mut TxContext
 ) {
     consumer.quote_verifier.verify_quotes(&quotes, clock);
     let mut i = 0;
@@ -255,6 +355,9 @@ fun validate_price_deviation(
 
 #[test_only]
 use sui::test_scenario;
+use sui::clock;
+use switchboard::decimal;
+use switchboard::quote;
 
 #[test]
 fun test_quote_consumer_creation() {
@@ -270,7 +373,8 @@ fun test_quote_consumer_creation() {
     assert!(consumer.max_deviation_bps == 1000, 3);
     
     // Clean up
-    let QuoteConsumer { id, quote_verifier: _, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    let QuoteConsumer { id, quote_verifier, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    quote::delete_verifier(quote_verifier);
     object::delete(id);
     test_scenario::end(scenario);
 }
@@ -289,7 +393,7 @@ fun test_collateral_ratio_calculation() {
     consumer.last_update_time = 1000;
     
     // Create a mock clock
-    let clock = clock::create_for_testing(ctx);
+    let mut clock = clock::create_for_testing(ctx);
     clock::set_for_testing(&mut clock, 2000); // 1 second later
     
     // Test collateral ratio calculation
@@ -300,7 +404,8 @@ fun test_collateral_ratio_calculation() {
     
     // Clean up
     clock::destroy_for_testing(clock);
-    let QuoteConsumer { id, quote_verifier: _, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    let QuoteConsumer { id, quote_verifier, last_price: _, last_update_time: _, max_age_ms: _, max_deviation_bps: _ } = consumer;
+    quote::delete_verifier(quote_verifier);
     object::delete(id);
     test_scenario::end(scenario);
 }
