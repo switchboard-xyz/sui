@@ -2,7 +2,6 @@
 name = "example"
 edition = "2024.beta"
 version = "0.0.1"
-published-at = "0x9c78cd79b40d22b9dbb2198975523b20696ba2ada2fecbb1db94fb2616c48b88"
 
 [dependencies.Switchboard]
 git = "https://github.com/switchboard-xyz/sui.git"
@@ -13,4 +12,4 @@ rev = "testnet"
 example = "0x0"
 std = "0x1"
 sui =  "0x2"
-switchoard = "0x28005599a66e977bff26aeb1905a02cda5272fd45bb16a5a9eb38e8659658cff"
+switchboard = "0x0ea79f9c3fa1e3f701885a00bf26f92a297223165f26529767d2f7d1e3c4ac1e"
