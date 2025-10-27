@@ -1,3 +1,17 @@
+/**
+ * Switchboard Oracle Quote Verifier Example
+ * 
+ * This script demonstrates how to:
+ * 1. Create a QuoteConsumer with an embedded Quote Verifier
+ * 2. Fetch real-time oracle data from Switchboard's oracle network
+ * 3. Verify and update the on-chain price using the Quote Verifier
+ * 
+ * Prerequisites:
+ * - Sui CLI installed
+ * - Deployed example_2025 contract
+ * - Environment variables configured (see .env.example)
+ */
+
 import { SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Transaction } from "@mysten/sui/transactions";
@@ -6,143 +20,242 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import {  SwitchboardClient, Quote } from "@switchboard-xyz/sui-sdk";
+import { SwitchboardClient, Quote } from "@switchboard-xyz/sui-sdk";
 
-const TESTNET_SUI_RPC = "https://fullnode.testnet.sui.io:443";
-const client = new SuiClient({
-  url: TESTNET_SUI_RPC,
-});
+// ============================================================================
+// Configuration
+// ============================================================================
 
-// Get the Switchboard state and log it
-const sb = new SwitchboardClient(client);
-const state = await sb.fetchState();
-console.log("Switchboard state:", state);
+const config = {
+  // RPC URL (default: Sui testnet)
+  rpcUrl: process.env.SUI_RPC_URL || "https://fullnode.testnet.sui.io:443",
+  
+  // Keystore configuration
+  keystoreIndex: parseInt(process.env.KEYSTORE_INDEX || "0"),
+  
+  // Your deployed package address
+  examplePackageId: process.env.EXAMPLE_PACKAGE_ID || "0xed9da5e073dc032c6135c95fae89bdcfb2f6e9c6590c2e947926ce887d154480",
+  
+  // Feed to track (default: BTC/USD)
+  feedHash: process.env.FEED_HASH || "0x4cd1cad962425681af07b9254b7d804de3ca3446fbfd1371bb258d2c75059812",
+  
+  // Number of oracles to query
+  numOracles: parseInt(process.env.NUM_ORACLES || "3"),
+  
+  // Quote Consumer parameters
+  maxAgeMs: parseInt(process.env.MAX_AGE_MS || "300000"), // 5 minutes
+  maxDeviationBps: parseInt(process.env.MAX_DEVIATION_BPS || "1000"), // 10%
+};
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-let keypair: Ed25519Keypair | null = null;
+function loadKeypair(): Ed25519Keypair {
+  try {
+    const keystorePath = path.join(
+      os.homedir(),
+      ".sui",
+      "sui_config",
+      "sui.keystore"
+    );
+    const keystore = JSON.parse(fs.readFileSync(keystorePath, "utf-8"));
 
-try {
-  const keystorePath = path.join(
-    os.homedir(),
-    ".sui",
-    "sui_config",
-    "sui.keystore"
-  );
-  const keystore = JSON.parse(fs.readFileSync(keystorePath, "utf-8"));
+    if (keystore.length < config.keystoreIndex + 1) {
+      throw new Error(`Keystore has fewer than ${config.keystoreIndex + 1} keys.`);
+    }
 
-  if (keystore.length < 1) {
-    throw new Error("Keystore has fewer than 1 key.");
-  }
-
-  const secretKey = fromB64(keystore[0]);
-  keypair = Ed25519Keypair.fromSecretKey(secretKey.slice(1));
-} catch (error) {
-  console.log("Error loading keypair:", error);
-}
-
-if (!keypair) {
-  throw new Error("Keypair not loaded");
-}
-
-const userAddress = keypair.getPublicKey().toSuiAddress();
-console.log(`User account ${userAddress} loaded.`);
-
-// Update these with your deployed contract address and queue ID
-const exampleAddress =
-  "0xed9da5e073dc032c6135c95fae89bdcfb2f6e9c6590c2e947926ce887d154480";
-const queueId = state?.oracleQueueId;
-if (!queueId) {
-  throw new Error("Queue ID not found");
-}
-
-console.log("Queue ID:", queueId);
-
-// Create the new transaction
-const tx = new Transaction();
-
-
-// intitialize the quote consumer
-tx.moveCall({
-  target: `${exampleAddress}::example_2025::create_quote_consumer`,
-  arguments: [
-    tx.pure.id(queueId),
-    tx.pure.u64(300_000), // max_age_ms: 5 minutes
-    tx.pure.u64(1000), // max_deviation_bps: 10%
-  ],
-});
-
-const res = await client.signAndExecuteTransaction({
-  signer: keypair,
-  transaction: tx,
-  options: {
-    showEffects: true,
-    showObjectChanges: true,
-    showEvents: true,
-  },
-});
-
-console.log("Quote Consumer Example response:", res);
-
-// Get the quote consumer id
-let quoteConsumerId: string | null = null;
-for (const change of res.objectChanges ?? []) {
-  if (change.type === "created" && change.objectType?.includes("::example_2025::QuoteConsumer")) {
-    quoteConsumerId = change.objectId;
-    console.log("Quote Consumer ID:", quoteConsumerId);
+    const secretKey = fromB64(keystore[config.keystoreIndex]);
+    return Ed25519Keypair.fromSecretKey(secretKey.slice(1));
+  } catch (error) {
+    console.error("Error loading keypair:", error);
+    throw new Error("Failed to load keypair. Ensure your Sui keystore is set up.");
   }
 }
 
-if (!quoteConsumerId) {
-  throw new Error("Quote Consumer ID not found");
-}
+// ============================================================================
+// Main Script
+// ============================================================================
 
-// Wait a moment to ensure the object is available
-await new Promise(resolve => setTimeout(resolve, 2000));
+async function main() {
+  console.log("🚀 Switchboard Oracle Quote Verifier Example\n");
+  console.log("Configuration:");
+  console.log(`  RPC URL: ${config.rpcUrl}`);
+  console.log(`  Package: ${config.examplePackageId}`);
+  console.log(`  Feed: ${config.feedHash}`);
+  console.log(`  Oracles: ${config.numOracles}\n`);
 
-// ========== Test Update Price ==========
-console.log("\n=== Testing update_price ===\n");
+  // Initialize Sui client
+  const client = new SuiClient({ url: config.rpcUrl });
 
-// Define the feed hash you want to test with (example: BTC/USD)
-// You can use any valid Switchboard feed hash
-const feedHash = "0x7418dc6408f5e0eb4724dabd81922ee7b0814a43abc2b30ea7a08222cd1e23ee"; // BTC/USD
+  // Initialize Switchboard client and fetch state
+  console.log("📡 Connecting to Switchboard...");
+  const sb = new SwitchboardClient(client);
+  const state = await sb.fetchState();
+  
+  console.log("✅ Switchboard Connected:");
+  console.log(`   Oracle Queue: ${state.oracleQueueId}`);
+  console.log(`   Guardian Queue: ${state.guardianQueueId}`);
+  console.log(`   Network: ${state.mainnet ? 'Mainnet' : 'Testnet'}\n`);
 
-const updateTx = new Transaction();
+  // Load user keypair
+  const keypair = loadKeypair();
+  const userAddress = keypair.getPublicKey().toSuiAddress();
+  console.log(`👤 User Address: ${userAddress}\n`);
 
-// Fetch the quote update from Crossbar
-const quotes = await Quote.fetchUpdateQuote(sb, updateTx, {
-  feedHashes: [feedHash]
-});
+  // ============================================================================
+  // Step 1: Create Quote Consumer
+  // ============================================================================
 
-// Call the update_price function on your contract
-updateTx.moveCall({
-  target: `${exampleAddress}::example_2025::update_price`,
-  arguments: [
-    updateTx.object(quoteConsumerId), // QuoteConsumer object (shared)
-    quotes, // Quotes object from fetchUpdateQuote
-    updateTx.pure.vector("u8", Array.from(Buffer.from(feedHash.replace("0x", ""), "hex"))), // feed_hash as vector<u8>
-    updateTx.object("0x6"), // Clock object
-  ],
-});
+  console.log("📝 Step 1: Creating QuoteConsumer with Quote Verifier...");
+  console.log(`   Max Age: ${config.maxAgeMs}ms (${config.maxAgeMs / 1000}s)`);
+  console.log(`   Max Deviation: ${config.maxDeviationBps} bps (${config.maxDeviationBps / 100}%)`);
 
-const updateRes = await client.signAndExecuteTransaction({
-  signer: keypair,
-  transaction: updateTx,
-  options: {
-    showEffects: true,
-    showObjectChanges: true,
-    showEvents: true,
-  },
-});
+  const createTx = new Transaction();
 
-console.log("Update Price response:", JSON.stringify(updateRes, null, 2));
+  // Call create_quote_consumer on your contract
+  createTx.moveCall({
+    target: `${config.examplePackageId}::example_2025::create_quote_consumer`,
+    arguments: [
+      createTx.pure.id(state.oracleQueueId),
+      createTx.pure.u64(config.maxAgeMs),
+      createTx.pure.u64(config.maxDeviationBps),
+    ],
+  });
 
-// Log any events emitted
-if (updateRes.events && updateRes.events.length > 0) {
-  console.log("\n=== Events Emitted ===");
-  for (const event of updateRes.events) {
-    console.log(`Event Type: ${event.type}`);
-    console.log(`Event Data:`, JSON.stringify(event.parsedJson, null, 2));
+  const createRes = await client.signAndExecuteTransaction({
+    signer: keypair,
+    transaction: createTx,
+    options: {
+      showEffects: true,
+      showObjectChanges: true,
+      showEvents: true,
+    },
+  });
+
+  // Extract the QuoteConsumer ID from the response
+  let quoteConsumerId: string | null = null;
+  for (const change of createRes.objectChanges ?? []) {
+    if (change.type === "created" && change.objectType?.includes("::example_2025::QuoteConsumer")) {
+      quoteConsumerId = change.objectId;
+      console.log(`✅ QuoteConsumer Created: ${quoteConsumerId}\n`);
+      break;
+    }
   }
+
+  if (!quoteConsumerId) {
+    throw new Error("❌ Failed to create QuoteConsumer");
+  }
+
+  // Wait for object to be available
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // ============================================================================
+  // Step 2: Fetch Oracle Data
+  // ============================================================================
+
+  console.log("🔍 Step 2: Fetching Oracle Data from Switchboard...");
+  console.log(`   Feed Hash: ${config.feedHash}`);
+  console.log(`   Requesting data from ${config.numOracles} oracles...`);
+
+  const updateTx = new Transaction();
+
+  // Fetch signed oracle data via Crossbar
+  // This returns a Quotes object that contains:
+  // - Signatures from multiple oracles
+  // - Price data for the requested feed
+  // - Timestamp and slot information
+  const quotes = await Quote.fetchUpdateQuote(sb, updateTx, {
+    feedHashes: [config.feedHash],
+    numOracles: config.numOracles,
+  });
+
+  console.log("✅ Oracle data fetched successfully\n");
+
+  // ============================================================================
+  // Step 3: Verify and Update Price
+  // ============================================================================
+
+  console.log("🔐 Step 3: Verifying and Updating Price...");
+  console.log("   The Quote Verifier will:");
+  console.log("   1. Verify oracle signatures");
+  console.log("   2. Check quote freshness (<10s old)");
+  console.log("   3. Validate price deviation (<10%)");
+  console.log("   4. Store the verified price\n");
+
+  // Call update_price on your contract
+  // This will trigger the Quote Verifier to validate the oracle data
+  updateTx.moveCall({
+    target: `${config.examplePackageId}::example_2025::update_price`,
+    arguments: [
+      updateTx.object(quoteConsumerId), // Your QuoteConsumer object
+      quotes, // Signed oracle data from Crossbar
+      updateTx.pure.vector("u8", Array.from(Buffer.from(config.feedHash.replace("0x", ""), "hex"))),
+      updateTx.object("0x6"), // Sui Clock object
+    ],
+  });
+
+  const updateRes = await client.signAndExecuteTransaction({
+    signer: keypair,
+    transaction: updateTx,
+    options: {
+      showEffects: true,
+      showObjectChanges: true,
+      showEvents: true,
+    },
+  });
+
+  // ============================================================================
+  // Display Results
+  // ============================================================================
+
+  console.log("📊 Results:\n");
+
+  if (updateRes.effects?.status.status === "success") {
+    console.log("✅ Price Update Successful!");
+  } else {
+    console.log("❌ Price Update Failed");
+    console.log("Status:", updateRes.effects?.status);
+  }
+
+  // Display emitted events
+  if (updateRes.events && updateRes.events.length > 0) {
+    console.log("\n📢 Events Emitted:\n");
+    
+    for (const event of updateRes.events) {
+      if (event.type.includes("PriceUpdated")) {
+        const data = event.parsedJson as any;
+        console.log("🎯 PriceUpdated Event:");
+        console.log(`   Feed Hash: ${Buffer.from(data.feed_hash).toString('hex')}`);
+        console.log(`   Old Price: ${data.old_price || 'N/A'}`);
+        console.log(`   New Price: ${data.new_price}`);
+        console.log(`   Timestamp: ${new Date(parseInt(data.timestamp)).toISOString()}`);
+        console.log(`   Oracles Confirmed: ${data.num_oracles}`);
+      } else if (event.type.includes("QuoteValidationFailed")) {
+        const data = event.parsedJson as any;
+        console.log("⚠️  QuoteValidationFailed Event:");
+        console.log(`   Feed Hash: ${Buffer.from(data.feed_hash).toString('hex')}`);
+        console.log(`   Reason: ${Buffer.from(data.reason).toString()}`);
+        console.log(`   Timestamp: ${new Date(parseInt(data.timestamp)).toISOString()}`);
+      }
+    }
+  }
+
+  console.log("\n" + "=".repeat(80));
+  console.log("✨ Example completed successfully!");
+  console.log("=".repeat(80));
+  console.log("\nWhat just happened:");
+  console.log("1. ✅ Created a QuoteConsumer with a Quote Verifier");
+  console.log("2. ✅ Fetched real-time price data from multiple Switchboard oracles");
+  console.log("3. ✅ Verified oracle signatures on-chain");
+  console.log("4. ✅ Validated price freshness and deviation");
+  console.log("5. ✅ Stored the verified price in your contract");
+  console.log("\nYour contract now has access to verified, real-time oracle data!");
+  console.log(`QuoteConsumer ID: ${quoteConsumerId}`);
 }
 
-console.log("\n✅ Script completed successfully!");
+// Run the script
+main().catch((error) => {
+  console.error("\n❌ Error:", error.message);
+  process.exit(1);
+});
