@@ -8,7 +8,7 @@
   <p>Switchboard is a multi-chain, permissionless oracle protocol allowing developers to fully control how data is relayed on-chain to their smart contracts.</p>
 
   <div>
-    <a href="https://discord.gg/switchboardxyz">
+    <a href="https://discord.gg/TJAv6ZYvPC">
       <img alt="Discord" src="https://img.shields.io/discord/841525135311634443?color=blueviolet&logo=discord&logoColor=white" />
     </a>
     <a href="https://twitter.com/switchboardxyz">
